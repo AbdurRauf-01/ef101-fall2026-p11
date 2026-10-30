@@ -35,7 +35,7 @@ This application is designed with absolute privacy in mind. It is a **100% local
 
 This application is fully open source. You can audit the codebase, inspect the dependencies, or build the application from source yourself by visiting our official GitHub repository:
 
-👉 [github.com/AbdurRauf-01/ef101-fall2026-p11](https://github.com/AbdurRauf-01/ef101-fall2026-p11)
+[github.com/AbdurRauf-01/ef101-fall2026-p11](https://github.com/AbdurRauf-01/ef101-fall2026-p11)
 
 ---
 
