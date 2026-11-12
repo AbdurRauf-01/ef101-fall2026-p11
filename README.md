@@ -6,6 +6,19 @@
 
 Flask + SQLite web app that tracks computer assets (specs, location, warranty, status) and their maintenance/fault history, with a dashboard and CSV export. All data in `inventory.db` is **DEMO data**, not real assets.
 
+## Submission details
+
+| Item | Details |
+| --- | --- |
+| Project ID and title | EF101-P11, Computer Hardware Inventory and Maintenance System |
+| Section and group | Section C, Group 11 |
+| Team members | Irteza Raza (EE-26129), Abdur Rauf (EE-26138), Hassan Majid (EE-26125) |
+| Software, platform and tools | Python 3.8+, Flask, segno, SQLite, Jinja2 templates, plain CSS, jsQR (bundled) |
+| Running the project | Locally on your own computer. Run `start.bat` (Windows), `start.command` (macOS) or `start.sh` (Linux). The launcher opens the app in your browser at `http://127.0.0.1`. Full steps are in the sections below. |
+| Login or demo credentials | None required. The app has no login and no user roles. |
+| Hosted online | No. The project runs locally only. |
+| Database and data | SQLite file `inventory.db` in the project folder, with synthetic demo data. No online database or service is used. |
+
 ## Project schema
 ![Project schema](docs/project-schema.png)
 
