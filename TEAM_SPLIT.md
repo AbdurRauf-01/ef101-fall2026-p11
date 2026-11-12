@@ -58,7 +58,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 - Routes: `/` and `/dashboard`, `/assets`, `/assets/new`, `/api/next-asset-id`, `/api/suggested-ip`, `/api/reset-demo`, `/api/backup`, `/assets/<id>`, `/assets/<id>/edit`, `/assets/<id>/retire`, `/assets/<id>/reactivate`, `/assets/<id>/maintenance`, `/assets/<id>/fault/edit`, `/steps/<id>/edit|delete`, `/maintenance`, `/maintenance/<id>/edit|delete`, `/export/assets.csv`, `/export/maintenance.csv`, `/report/assets`, `/report/maintenance` and the `/about/...` pages.
 - `csv_response()` builds the CSV download (formula cells are escaped). `guard_requests()` refuses wrong Host headers and cross-site form posts, and `security_headers()` adds the protection headers. Error handlers show friendly pages for 400, 404, 405, 413, 500 and database errors.
 - `asset_edit()` loads the asset, and before showing the edit form turns the database row into a dictionary with blank text for empty values (the fix for the version 1 error described in report section 5).
-- `test_app.py` runs every check (290 in version 21) on a temporary database (your real data is never touched) and prints a results table.
+- `test_app.py` runs every check (292 in version 21) on a temporary database (your real data is never touched) and prints a results table.
 
 **What you must do**
 
