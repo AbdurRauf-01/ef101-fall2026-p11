@@ -8,7 +8,7 @@ Deadline: Monday 9 Nov 2026. The code is already built and tested (`python test_
 
 |  | Irteza Raza<br>(EE-26129): Database | Abdur Rauf<br>(EE-26138): Backend | Hassan Majid<br>(EE-26125): Frontend |
 | --- | --- | --- | --- |
-| Files | `schema.sql`, `db.py`, `queries.py`, `seed.py`, `inventory.db` | `app.py`, `qr_labels.py`, `test_app.py`, `migrate.py`, Scripts, `README` | No code. Reads and explains `templates/` (16 files), `static/style.css`, `docs/` diagram |
+| Files | `schema.sql`, `db.py`, `queries.py`, `seed.py`, `inventory.db` | `app.py`, `qr_labels.py`, `test_app.py`, `migrate.py`, Scripts, `README` | No code. Reads and explains `templates/` (18 files), `static/style.css`, `docs/` diagram |
 | Report sections | 4 Data design, 7 Results, 8 Limitations | 1 Problem, 5 Main code segments, 6 Testing, 7 Results, 8 Limitations | 1 Problem, 2 Architecture, 3 Technology, 7 Results, 8 Limitations |
 | Extra | Demo dataset deliverable, data/storage description | README run steps, test evidence | Final report PDF + Classroom upload, demo video (optional), figures |
 
@@ -58,7 +58,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 - Routes: `/` and `/dashboard`, `/assets`, `/assets/new`, `/api/next-asset-id`, `/api/suggested-ip`, `/api/reset-demo`, `/api/backup`, `/assets/<id>`, `/assets/<id>/edit`, `/assets/<id>/retire`, `/assets/<id>/reactivate`, `/assets/<id>/maintenance`, `/assets/<id>/fault/edit`, `/steps/<id>/edit|delete`, `/maintenance`, `/maintenance/<id>/edit|delete`, `/export/assets.csv`, `/export/maintenance.csv`, `/report/assets`, `/report/maintenance` and the `/about/...` pages.
 - `csv_response()` builds the CSV download (formula cells are escaped). `guard_requests()` refuses wrong Host headers and cross-site form posts, and `security_headers()` adds the protection headers. Error handlers show friendly pages for 400, 404, 405, 413, 500 and database errors.
 - `asset_edit()` loads the asset, and before showing the edit form turns the database row into a dictionary with blank text for empty values (the fix for the version 1 error described in report section 5).
-- `test_app.py` runs every check (291 in version 21) on a temporary database (your real data is never touched) and prints a results table.
+- `test_app.py` runs every check (290 in version 21) on a temporary database (your real data is never touched) and prints a results table.
 
 **What you must do**
 

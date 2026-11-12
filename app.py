@@ -458,8 +458,8 @@ def api_reset_demo():
             backup_path = BACKUPS_DIR / f"inventory.before-reset-{stamp}.db"
             shutil.copy2(DB_PATH, backup_path)
         import seed
-        seed.main()
-        msg = "Inventory reset to demo data (40 assets, 43 maintenance records)."
+        n_assets, n_events = seed.main()
+        msg = f"Inventory reset to demo data ({n_assets} assets, {n_events} maintenance records)."
         if backup_path:
             msg += f" Backup saved as backups/{backup_path.name}"
         flash(msg, "success")

@@ -17,6 +17,7 @@ db.DB_PATH = TMP                       # redirect everything to a throwaway data
 import seed                            # noqa: E402
 import queries                         # noqa: E402
 import app as appmod                   # noqa: E402
+appmod.BACKUPS_DIR = TMP.parent / "backups"   # test backups go to a temp folder, not the project's backups/
 
 seed.main()
 client = appmod.app.test_client()
@@ -1074,8 +1075,8 @@ import qr_labels                      # noqa: E402
 
 QA = "L1-PC-004"                       # an active demo asset
 active_ids = [r["asset_id"] for r in queries.filtered_assets({})]
-check("Version number", "appmod.APP_VERSION and the sidebar", "20, shown as v20",
-      appmod.APP_VERSION == "20" and "v20" in client.get("/dashboard").get_data(as_text=True))
+check("Version number", "appmod.APP_VERSION and the sidebar", "21, shown as v21",
+      appmod.APP_VERSION == "21" and "v21" in client.get("/dashboard").get_data(as_text=True))
 check("GitHub link constant", "appmod.GITHUB_URL", "AbdurRauf-01/ef101-fall2026-p11",
       appmod.GITHUB_URL == "https://github.com/AbdurRauf-01/ef101-fall2026-p11")
 
@@ -1269,7 +1270,7 @@ check("Printable asset report with filter", "GET /report/assets?location=Lab 1",
 
 rep_m = client.get("/report/maintenance")
 check("Printable maintenance report", "GET /report/maintenance", "200, contains report title and events table",
-      rep_m.status_code == 200 and "Maintenance & Fault History Report" in rep_m.get_data(as_text=True)
+      rep_m.status_code == 200 and "Maintenance &amp; Fault History Report" in rep_m.get_data(as_text=True)
       and "table" in rep_m.get_data(as_text=True))
 
 # Test in-app backup route
@@ -1281,6 +1282,11 @@ check("In-app backup", "POST /api/backup", "creates backup file in backups/ and 
 reset_res = client.post("/api/reset-demo", follow_redirects=True)
 check("In-app reset saves backup", "POST /api/reset-demo", "creates before-reset backup in backups/",
       reset_res.status_code == 200 and "Backup saved as backups/" in reset_res.get_data(as_text=True))
+check("In-app reset reports the real counts", "POST /api/reset-demo", "(40 assets, 43 maintenance records)",
+      "(40 assets, 43 maintenance records)" in reset_res.get_data(as_text=True))
+again = [seed.main(), seed.main()]
+check("Demo data is identical on every reset", "seed.main() called twice in one process",
+      "40 assets and 43 events both times", again == [(40, 43), (40, 43)])
 
 dash = client.get("/dashboard").get_data(as_text=True)
 check("Sidebar v21 links and buttons", "GET /dashboard", "Asset Report, Maintenance Report, Backup data button",

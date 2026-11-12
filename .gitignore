@@ -2,3 +2,6 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+backups/
+inventory.db.bak
+inventory.new.db

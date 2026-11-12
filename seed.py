@@ -8,7 +8,6 @@ from datetime import date, timedelta
 
 from db import get_db, init_db
 
-random.seed(101)
 # Fixed reference date (not date.today()) so the demo data is identical on every run and every day.
 TODAY = date(2026, 10, 9)
 
@@ -62,6 +61,9 @@ def rand_date(start, end):
 
 
 def main():
+    """Write the demo data. Returns (assets, maintenance events) written.
+    The random generator is reseeded on every call, so each reset gives exactly the same demo data."""
+    random.seed(101)
     init_db()
     conn = get_db()
     conn.executemany("INSERT INTO locations (name,prefix,ip_subnet) VALUES (?,?,?)",
@@ -147,6 +149,7 @@ def main():
     conn.commit()
     conn.close()
     print(f"Seeded {len(assets)} demo assets and {len(events)} maintenance events.")
+    return len(assets), len(events)
 
 
 if __name__ == "__main__":

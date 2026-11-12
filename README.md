@@ -9,6 +9,59 @@ Flask + SQLite web app that tracks computer assets (specs, location, warranty, s
 ## Project schema
 ![Project schema](docs/project-schema.png)
 
+## Dependencies
+
+Everything the app needs, with the official website for each. The launchers install the Python packages for you; the rest is listed so you know what is being used.
+
+**Required (installed by you or the launcher)**
+
+| Dependency | Used for | Official website |
+| --- | --- | --- |
+| Python 3.8 or newer | Runs the whole app | https://www.python.org |
+| pip | Installs the packages in `requirements.txt` | https://pip.pypa.io |
+| venv (part of Python) | Creates the `venv/` folder | https://docs.python.org/3/library/venv.html |
+| Flask (`>=2.2`) | Web framework | https://flask.palletsprojects.com |
+| segno (`>=1.5`) | Draws QR codes as SVG | https://segno.readthedocs.io |
+| SQLite (built into Python as `sqlite3`) | The database file `inventory.db` | https://www.sqlite.org |
+
+**Installed automatically with Flask**
+
+| Dependency | Official website |
+| --- | --- |
+| Werkzeug | https://werkzeug.palletsprojects.com |
+| Jinja2 (templates) | https://jinja.palletsprojects.com |
+| itsdangerous | https://itsdangerous.palletsprojects.com |
+| click | https://click.palletsprojects.com |
+| blinker | https://blinker.readthedocs.io |
+| MarkupSafe | https://pypi.org/project/MarkupSafe/ |
+
+**Bundled in the project (nothing to install)**
+
+| Dependency | Used for | Official website |
+| --- | --- | --- |
+| jsQR (Apache-2.0) | Reads QR codes in the browser (`static/vendor/jsQR.js`) | https://github.com/cozmo/jsQR |
+
+**Needed for the setup steps**
+
+| Dependency | Used for | Official website |
+| --- | --- | --- |
+| git | Cloning the project | https://git-scm.com |
+| GitHub | Hosts the repository | https://github.com |
+| winget (Windows) | Installs Python in the launcher | https://learn.microsoft.com/windows/package-manager/winget/ |
+| Homebrew (macOS) | Installs Python in the launcher | https://brew.sh |
+| apt (Ubuntu) | Installs `python3-venv`, `python3-pip` and `git` | https://ubuntu.com |
+| dnf (Fedora) | Installs Python and pip | https://fedoraproject.org |
+| PowerShell (Windows) | The `Activate.ps1` and `Set-ExecutionPolicy` steps | https://learn.microsoft.com/powershell/ |
+
+**Optional**
+
+| Dependency | Used for | Official website |
+| --- | --- | --- |
+| Modern browser (Chrome, Edge or Firefox) | Using the app, camera scanning, Save as PDF on reports | https://www.google.com/chrome · https://www.microsoft.com/edge · https://www.mozilla.org/firefox |
+| zxing-cpp | Extra QR decoding check in `test_app.py` | https://github.com/zxing-cpp/zxing-cpp |
+| OpenCV (`cv2`) | Alternative QR decoding check in `test_app.py` | https://opencv.org |
+| numpy | Used by the QR decoding check in `test_app.py` | https://numpy.org |
+
 ## Run
 
 **Two-click launch** (installs Python and the packages first if they are missing; needs internet the first time):
@@ -29,7 +82,7 @@ What the launcher does: finds Python 3.8+ (installs it with winget/python.org on
 - **First launch:** an empty database is created with the six standard places. Add assets from the app.
 - **Demo data (optional):** `python seed.py` replaces the data with 40 demo assets. It asks you to type YES first when there is data.
 - **Several copies at once:** each copy has its own data file and its own address, so you can run an older version (for example v7) next to this one to compare.
-- **Tests:** `python test_app.py` runs every check (285 in version 21) on a temporary database and prints a results table.
+- **Tests:** `python test_app.py` runs every check (290 in version 21) on a temporary database and prints a results table.
 
 ## Manual run (no launcher)
 
@@ -62,7 +115,7 @@ Use this to open the project by hand after getting it from GitHub (main branch),
 8. **Start the app:** `python app.py` (optional: `python app.py --port 8000` to choose the port).
 9. **Open the address it prints** in your browser, normally http://127.0.0.1:5000 (the next free port if 5000 is busy). Use the address shown in your own terminal.
 10. **Stop the app** with `Ctrl+C` in the terminal. Leave the virtual environment with `deactivate`.
-11. **Run the tests (optional):** with the venv still active, `python test_app.py`. It uses a temporary database, so your data is not touched, and must end with `229/229 passed`.
+11. **Run the tests (optional):** with the venv still active, `python test_app.py`. It uses a temporary database, so your data is not touched, and must end with `290/290 passed`.
 
 Next time you only need steps 3, 5 and 8: open the terminal in the folder, activate the venv, run `python app.py`. To get later changes from GitHub, run `git pull` (clone) or download the ZIP again (keep your own `inventory.db` if you want to keep your data).
 
@@ -113,7 +166,7 @@ Linux notes:
 - `The virtual environment was not created successfully` or `ensurepip is not available` on Ubuntu: `python3-venv` is missing; run the Ubuntu command in step A, delete the half-made folder with `rm -rf venv`, and repeat step C.
 - `error: externally-managed-environment` when running pip: you are outside the venv. Run `source venv/bin/activate` first; do not use `--break-system-packages`.
 - `command not found: git`: install it as in step A, or use the ZIP download instead.
-- Optional: `python seed.py` resets the data to the demo data (type YES), and `python test_app.py` runs the 291 checks.
+- Optional: `python seed.py` resets the data to the demo data (type YES), and `python test_app.py` runs the 290 checks.
 - If a double-click launcher does not run, give it permission once: `chmod +x start.sh reset-demo-data.sh scripts/*.sh`, then `./start.sh`. This manual route does not need it.
 
 ## Files
@@ -129,7 +182,7 @@ Linux notes:
 | `schema.sql` | The four tables: `locations`, `assets`, `fault_steps` (steps of an open fault) and `maintenance` (history) |
 | `seed.py` | Demo data generator (fixed random seed, reproducible) |
 | `migrate.py` | Upgrades an older `inventory.db` to the current version without losing data (backup kept, safe to run twice) |
-| `CHANGELOG.md` | What changed in version 21 (older versions: the `changelogs/` folder on GitHub) |
+| `changelogs/` | Version history: `changelogs/v21.md` (what changed in version 21), `changelogs/v20.md` and older |
 | `test_app.py` | Test evidence (add, edit, retire, invalid input, duplicates, filters, history, dashboard, export) |
 | `templates/`, `static/` | HTML (Jinja) pages and the stylesheet; `static/scan.js` is the Scan page script and `static/vendor/jsQR.js` the bundled QR reader (Apache-2.0, licence beside it) |
 | `templates/report_assets.html` | Standalone printable asset inventory report (no base.html, `@media print` CSS) |
@@ -178,7 +231,7 @@ Run `python migrate.py` once (or `python migrate.py path/to/inventory.db`). It k
 
 **Software:** Python, Flask, SQLite (built-in `sqlite3`), Jinja templates and plain CSS. The QR codes are drawn by the Python package `segno` (BSD) and read in the browser by `jsQR` (Apache-2.0, one file bundled in `static/vendor/`, so nothing is loaded from the Internet at run time; `segno` is installed from the Python package index with the other requirements). No font, script or image is loaded from the Internet. No external data or assets are used; the demo data is generated by `seed.py`.
 
-**AI:** Claude (Anthropic) was used to draft the application code, the demo-data script, the test script and the report skeleton. Later versions (up to version 21) were improved and fixed using several Claude accounts. Version 19 (9 Nov 2026) changed the interface styling, sidebar counts and the Credits, Privacy, Contact and Schema text, and added the IP suggestion and two helper routes; built by Irteza Raza and Abdur Rauf with Claude from Hassan Majid's interface ideas, and listed in `CHANGELOG.md`. Version 20 (12 Nov 2026) added the QR label and scanner bonus feature and moved the repository to `AbdurRauf-01/ef101-fall2026-p11`; built by Abdur Rauf with Claude. Version 21 (12 Nov 2026) added printable asset and maintenance reports, an in-app backup button, and fixed the backup system so both in-app and script resets save backups to `backups/`; built by Abdur Rauf with Claude. A final review on 8 Nov 2026, also with Claude, found and fixed further errors. Every member reviewed, tested and can explain the project.
+**AI:** Claude (Anthropic) was used to draft the application code, the demo-data script, the test script and the report skeleton. Later versions (up to version 21) were improved and fixed using several Claude accounts. Version 19 (9 Nov 2026) changed the interface styling, sidebar counts and the Credits, Privacy, Contact and Schema text, and added the IP suggestion and two helper routes; built by Irteza Raza and Abdur Rauf with Claude from Hassan Majid's interface ideas, and listed in the `changelogs/` folder. Version 20 (12 Nov 2026) added the QR label and scanner bonus feature and moved the repository to `AbdurRauf-01/ef101-fall2026-p11`; built by Abdur Rauf with Claude. Version 21 (12 Nov 2026) added printable asset and maintenance reports, an in-app backup button, and fixed the backup system so both in-app and script resets save backups to `backups/`; built by Abdur Rauf with Claude. A final review on 8 Nov 2026, also with Claude, found and fixed further errors. Every member reviewed, tested and can explain the project.
 
 **Who did what** (same as report section 9):
 
