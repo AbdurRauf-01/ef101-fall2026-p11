@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Contact &amp; Inquiries{% endblock %}
+{% block content %}
+<div class="row between" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:12px">
+  <div class="row" style="gap:10px">
+    <svg width="22" height="22" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+    <div>
+      <h1>Contact &amp; Inquiries</h1>
+      <div class="subtitle">Get in touch with the development team for questions, feature proposals, or bugs.</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid g2" style="max-width:980px">
+  <!-- Email Correspondence -->
+  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between">
+    <div>
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+      </div>
+      <h2>Email Correspondence</h2>
+      <p class="muted" style="line-height:1.5;margin-bottom:16px">
+        For direct communication, institutional inquiries, or technical feedback regarding the EF101 system.
+      </p>
+    </div>
+    <div>
+      <a href="mailto:0h0kgsuss@mozmail.com" class="btn" style="width:auto">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        0h0kgsuss@mozmail.com
+      </a>
+    </div>
+  </div>
+
+  <!-- GitHub Discussions & Issues -->
+  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between">
+    <div>
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--hover);color:var(--ink);display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+      </div>
+      <h2>GitHub Discussions &amp; Issues</h2>
+      <p class="muted" style="line-height:1.5;margin-bottom:16px">
+        File bug reports, review commit logs, or submit pull requests directly to the open source repository.
+      </p>
+    </div>
+    <div>
+      <a href="{{ github_url }}" target="_blank" rel="noopener" class="btn sec" style="width:auto">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Open GitHub Repository
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

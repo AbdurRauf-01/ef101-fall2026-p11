@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Project Schema{% endblock %}
+{% block content %}
+<div class="row between" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:12px">
+  <div class="row" style="gap:10px">
+    <svg width="22" height="22" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+    <div>
+      <h1>Project Schema &amp; Relational Architecture</h1>
+      <div class="subtitle">Architecture and database diagram for this project (docs/project-schema.svg).</div>
+    </div>
+  </div>
+  <div>
+    <a class="btn" href="{{ url_for('schema_image', download=1) }}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Download project-schema.svg
+    </a>
+  </div>
+</div>
+
+<div class="card scroll" style="padding:16px;margin-bottom:24px">
+  <img src="{{ url_for('schema_image') }}" alt="Project schema diagram" style="display:block;width:100%;height:auto;border-radius:8px">
+</div>
+
+<!-- Table definitions breakdown -->
+<div class="section-label">Database Tables &amp; Constraints</div>
+<div class="grid g2" style="max-width:1200px">
+  <!-- locations -->
+  <div class="card" style="margin-bottom:0">
+    <div class="row" style="gap:8px;margin-bottom:8px">
+      <svg width="15" height="15" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+      <h2 style="margin:0">locations</h2>
+    </div>
+    <p class="muted" style="margin-bottom:12px;font-size:12px">Physical deployment zones and IP subnets for hardware assets.</p>
+    <table>
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Constraint</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="font-mono">name</td><td class="muted">TEXT</td><td><span class="badge b-Active">PK</span> Lab 1, Lab 2...</td></tr>
+        <tr><td class="font-mono">prefix</td><td class="muted">TEXT</td><td>UNIQUE, Asset ID prefix (L1)</td></tr>
+        <tr><td class="font-mono">ip_subnet</td><td class="muted">INTEGER</td><td>UNIQUE, CHECK (1..254)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- assets -->
+  <div class="card" style="margin-bottom:0">
+    <div class="row" style="gap:8px;margin-bottom:8px">
+      <svg width="15" height="15" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+      <h2 style="margin:0">assets</h2>
+    </div>
+    <p class="muted" style="margin-bottom:12px;font-size:12px">Computer hardware fleet catalogue, specs, network IPs, and open fault state.</p>
+    <table>
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Constraint</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="font-mono">asset_id</td><td class="muted">TEXT</td><td><span class="badge b-Active">PK</span> e.g. L1-PC-001</td></tr>
+        <tr><td class="font-mono">location</td><td class="muted">TEXT</td><td><span class="badge b-Under-Repair">FK</span> locations(name)</td></tr>
+        <tr><td class="font-mono">ip_address</td><td class="muted">TEXT</td><td>UNIQUE(location, ip_address)</td></tr>
+        <tr><td class="font-mono">status</td><td class="muted">TEXT</td><td>Operational | Faulty | Under Repair</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- maintenance -->
+  <div class="card" style="margin-bottom:0">
+    <div class="row" style="gap:8px;margin-bottom:8px">
+      <svg width="15" height="15" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+      <h2 style="margin:0">maintenance</h2>
+    </div>
+    <p class="muted" style="margin-bottom:12px;font-size:12px">Permanent repair log and completed fault events.</p>
+    <table>
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Constraint</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="font-mono">id</td><td class="muted">INTEGER</td><td><span class="badge b-Active">PK</span> AUTOINCREMENT</td></tr>
+        <tr><td class="font-mono">asset_id</td><td class="muted">TEXT</td><td><span class="badge b-Under-Repair">FK</span> assets(asset_id)</td></tr>
+        <tr><td class="font-mono">cost_usd</td><td class="muted">REAL</td><td>CHECK (cost_usd &gt;= 0)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- fault_steps -->
+  <div class="card" style="margin-bottom:0">
+    <div class="row" style="gap:8px;margin-bottom:8px">
+      <svg width="15" height="15" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      <h2 style="margin:0">fault_steps</h2>
+    </div>
+    <p class="muted" style="margin-bottom:12px;font-size:12px">Intermediate diagnostic and work steps while an asset fault remains open.</p>
+    <table>
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Constraint</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="font-mono">id</td><td class="muted">INTEGER</td><td><span class="badge b-Active">PK</span> AUTOINCREMENT</td></tr>
+        <tr><td class="font-mono">asset_id</td><td class="muted">TEXT</td><td><span class="badge b-Under-Repair">FK</span> assets(asset_id)</td></tr>
+        <tr><td class="font-mono">step_date</td><td class="muted">TEXT</td><td>ISO date YYYY-MM-DD</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

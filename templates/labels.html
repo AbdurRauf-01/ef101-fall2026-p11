@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Label ' ~ labels[0].asset_id if single and labels else 'QR labels' }}{% endblock %}
+{% block content %}
+<div class="row between noprint" style="margin-bottom:20px;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1>{% if single %}QR label: {{ labels[0].asset_id }}{% else %}QR labels ({{ labels|length }}){% endif %}</h1>
+    <div class="subtitle">
+      {% if single %}Print this label and stick it on the machine. A phone camera shows the specs; the Scan page of this app opens the live asset page.
+      {% else %}One label per asset in the current list. Use the filters on the Assets page to choose which labels to print.{% endif %}
+    </div>
+  </div>
+  <div class="row" style="gap:8px">
+    {% if single %}
+    <a class="btn sec" href="{{ url_for('asset_detail', asset_id=labels[0].asset_id) }}">Back to asset</a>
+    <a class="btn sec" href="{{ url_for('asset_qr_svg', asset_id=labels[0].asset_id, download=1) }}">Download SVG</a>
+    {% else %}
+    <a class="btn sec" href="{{ url_for('assets', **f) }}">Back to assets</a>
+    {% endif %}
+    {% if labels %}<button class="btn" type="button" id="print-btn">Print</button>{% endif %}
+  </div>
+</div>
+
+{% if not labels %}
+<div class="card"><p>No assets match the current filters, so there are no labels to print.</p></div>
+{% else %}
+<div class="label-sheet{{ ' single' if single }}" id="label-sheet">
+  {% for l in labels %}
+  <figure class="asset-label">
+    <div class="qr" role="img" aria-label="QR code for {{ l.asset_id }}">{{ l.svg|safe }}</div>
+    <figcaption>
+      <strong class="font-mono">{{ l.asset_id }}</strong>
+      <span>{{ l.manufacturer }} {{ l.model }}</span>
+      <span>{{ l.location }}</span>
+      <span class="small">Warranty to {{ l.warranty_expiry }}</span>
+      <span class="small">Printed {{ printed }}</span>
+    </figcaption>
+  </figure>
+  {% endfor %}
+</div>
+<p class="muted noprint" style="margin-top:14px">
+  Each code holds the asset's specs and its status as of {{ printed }}, for example:
+</p>
+<pre class="qr-text font-mono noprint">{{ labels[0].qr_text }}</pre>
+<p class="muted noprint">
+  A phone camera shows this text without any network. It is a snapshot: after a spec or status change, print the label again (the date on the label shows how old it is).
+  The Scan page of this app reads only the ID line and opens the live record.
+</p>
+{% endif %}
+<script>
+  var pb = document.getElementById('print-btn');
+  if (pb) pb.addEventListener('click', function () { window.print(); });
+</script>
+{% endblock %}

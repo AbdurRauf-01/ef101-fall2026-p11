@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Assets{% endblock %}
+{% block content %}
+<div class="row between" style="margin-bottom:20px;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1>Assets ({{ assets|length }})</h1>
+    <div class="subtitle">Filter, sort, and inspect machines across all active locations.</div>
+  </div>
+  <div class="row" style="gap:8px">
+    <a class="btn sec" href="{{ url_for('export_assets', **dict(f, sort=sort, dir=direction, first=first)) }}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="18"></line><line x1="15" y1="15" x2="12" y2="18"></line></svg>
+      Export CSV
+    </a>
+    <a class="btn sec" href="{{ url_for('labels', **dict(f, sort=sort, dir=direction, first=first)) }}" title="Printable QR labels for the assets listed below">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><line x1="14" y1="14" x2="14" y2="14.01"></line><line x1="21" y1="14" x2="21" y2="14.01"></line><line x1="14" y1="21" x2="17.5" y2="21"></line><line x1="21" y1="17.5" x2="21" y2="21"></line></svg>
+      QR labels
+    </a>
+    <a class="btn" href="{{ url_for('asset_new') }}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      + Add asset
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row" style="gap:6px;margin-bottom:12px">
+    <svg width="14" height="14" style="color:var(--muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+    <div class="section-label" style="margin:0">Fleet Filters &amp; Search</div>
+  </div>
+  <form class="filters" method="get">
+    <input type="hidden" name="sort" value="{{ sort }}">
+    <input type="hidden" name="dir" value="{{ direction }}">
+    <input type="hidden" name="first" value="{{ first }}">
+    <div class="formgrid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px">
+      <div>
+        <label for="f-q">Search (ID, model, CPU, IP)</label>
+        <input name="q" value="{{ f.get('q','') }}" id="f-q" placeholder="Type to filter...">
+      </div>
+      <div>
+        <label for="f-cpu_family">CPU family</label>
+        <select name="cpu_family" id="f-cpu_family">
+          <option value="">All</option>
+          {% for o in opts.cpu_family %}<option {{ 'selected' if f.get('cpu_family')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-ram_gb">RAM (GB)</label>
+        <select name="ram_gb" id="f-ram_gb">
+          <option value="">All</option>
+          {% for o in opts.ram_gb %}<option value="{{ o }}" {{ 'selected' if f.get('ram_gb')==o|string }}>{{ o }} GB</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-ram_type">RAM type</label>
+        <select name="ram_type" id="f-ram_type">
+          <option value="">All</option>
+          {% for o in ram_types %}<option {{ 'selected' if f.get('ram_type')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-storage_type">Storage type</label>
+        <select name="storage_type" id="f-storage_type">
+          <option value="">All</option>
+          {% for o in storage_types %}<option {{ 'selected' if f.get('storage_type')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-location">Location</label>
+        <select name="location" id="f-location">
+          <option value="">All</option>
+          {% for o in opts.location %}<option {{ 'selected' if f.get('location')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-status">Status</label>
+        <select name="status" id="f-status">
+          <option value="">All</option>
+          {% for o in statuses %}<option {{ 'selected' if f.get('status')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="f-warranty">Warranty</label>
+        <select name="warranty" id="f-warranty">
+          <option value="">All</option>
+          <option {{ 'selected' if f.get('warranty')=='Active' }}>Active</option>
+          <option {{ 'selected' if f.get('warranty')=='Expired' }}>Expired</option>
+        </select>
+      </div>
+      <div>
+        <label for="f-show">Show</label>
+        <select name="show" id="f-show">
+          <option value="">Active only</option>
+          <option value="retired" {{ 'selected' if f.get('show')=='retired' }}>Retired only</option>
+          <option value="all" {{ 'selected' if f.get('show')=='all' }}>All</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px;gap:8px">
+      <button class="btn" type="submit">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Apply
+      </button>
+      <a class="btn sec" href="{{ url_for('assets') }}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        Reset
+      </a>
+      <a class="btn sec" href="{{ url_for('export_assets', **dict(f, sort=sort, dir=direction, first=first)) }}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="18"></line><line x1="15" y1="15" x2="12" y2="18"></line></svg>
+        Export CSV
+      </a>
+    </div>
+  </form>
+</div>
+
+<div class="card scroll">
+  <table>
+    <thead>
+      <tr>
+        {% for key, label in columns %}
+        <th><a class="sortlink" href="{{ sort_link(key) }}">
+          {% if key == 'status' and sort == 'status' %}<span class="arrow st-{{ first|replace(' ', '-') }}">▲</span>
+          {% elif key == sort %}<span class="arrow">{{ '▲' if direction == 'asc' else '▼' }}</span>
+          {% else %}<span class="arrow faint">↕</span>{% endif %}
+          {{ label }}</a></th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in assets %}
+      <tr>
+        <td><a href="{{ url_for('asset_detail', asset_id=a.asset_id) }}">{{ a.asset_id }}</a>
+            {% if not a.active %}<span class="badge b-Retired">Retired</span>{% endif %}</td>
+        <td>{{ a.manufacturer }} {{ a.model }}</td>
+        <td>{{ a.cpu }}</td>
+        <td>{{ a.ram_gb }} GB {{ a.ram_type }}</td>
+        <td>{{ a.storage_type }} {{ a.storage_gb }} GB</td>
+        <td>{{ a.gpu or 'Integrated' }}{% if a.gpu_vram_gb %} ({{ a.gpu_vram_gb }} GB){% endif %}</td>
+        <td>{{ a.location }}</td>
+        <td><span class="badge b-{{ a.status|replace(' ', '-') }}">{{ a.status }}</span></td>
+        <td><span class="badge b-{{ a.warranty|replace(' ', '-') }}">{{ a.warranty }}</span></td>
+        <td>{{ a.fault_count }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="10" class="muted" style="padding:24px 20px;text-align:center">No assets match these filters.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

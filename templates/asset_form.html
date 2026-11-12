@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add New Hardware Asset' if new else 'Edit ' ~ a.asset_id }}{% endblock %}
+{% block content %}
+<div class="row between" style="margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:12px">
+  <div class="row" style="gap:12px">
+    <a class="btn sec" href="{{ url_for('assets') }}" style="padding:6px 10px" title="Back to assets">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </a>
+    <div>
+      <h1>{{ 'Add New Hardware Asset' if new else 'Edit Asset: ' ~ a.asset_id }}</h1>
+      <div class="subtitle">Enter machine specifications, network credentials, and warranty parameters.</div>
+    </div>
+  </div>
+</div>
+
+<form method="post" novalidate style="max-width:980px;margin:0 auto">
+  <!-- Card 1: Location & Identity -->
+  <div class="card">
+    <div class="section-label">1. Location &amp; Identity</div>
+    <div class="formgrid" style="grid-template-columns:repeat(auto-fit, minmax(280px, 1fr))">
+      <div>
+        <label for="loc-select">Location *</label>
+        <select name="location" id="loc-select" style="{{ 'display:none' if a.get('location')==NEW_LOCATION }}">
+          <option value="">— choose —</option>
+          {% for o in locations %}<option{{ ' selected' if a.get('location')==o }}>{{ o }}</option>{% endfor %}
+          <option value="{{ NEW_LOCATION }}"{{ ' selected' if a.get('location')==NEW_LOCATION }}>+ Add new location…</option>
+        </select>
+        <input name="new_location" id="loc-new" value="{{ a.get('new_location','') or '' }}"
+               placeholder="Type the new location (Esc = back to list)" style="{{ '' if a.get('location')==NEW_LOCATION else 'display:none' }}">
+      </div>
+
+      <div>
+        <div class="row between" style="margin-bottom:4px">
+          <label for="asset-id-input" style="margin:0">Asset ID {{ '(Auto-generated or custom)' if new else '(Permanent)' }}</label>
+          {% if new %}
+          <button type="button" id="aid-reset-btn" class="btn sec small" style="display:none;border:none;padding:0;color:var(--accent);background:transparent">Reset to auto</button>
+          {% endif %}
+        </div>
+        <input name="asset_id" id="asset-id-input" class="font-mono" value="{{ a.get('asset_id','') or '' }}" {{ '' if new else 'readonly' }} placeholder="auto, e.g. L1-PC-041">
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: System & Hardware Components -->
+  <div class="card">
+    <div class="section-label">2. System &amp; Hardware Components</div>
+    <div class="formgrid">
+      <div>
+        <label for="f-manufacturer">Manufacturer *</label>
+        <input name="manufacturer" value="{{ a.get('manufacturer','') }}" placeholder="Dell, HP, Lenovo, Custom..." id="f-manufacturer">
+      </div>
+
+      <div>
+        <label for="f-model">Model *</label>
+        <input name="model" value="{{ a.get('model','') }}" placeholder="OptiPlex 3090, EliteDesk..." id="f-model">
+      </div>
+
+      <div>
+        <label for="f-os">Operating system *</label>
+        <input name="os" value="{{ a.get('os','') }}" placeholder="Windows 11 Pro, Ubuntu 22.04" id="f-os">
+      </div>
+
+      <div>
+        <label for="f-cpu">CPU (full model) *</label>
+        <input name="cpu" value="{{ a.get('cpu','') }}" placeholder="Intel Core i5-12400" id="f-cpu">
+      </div>
+
+      <div>
+        <label for="f-cpu_family">CPU family *</label>
+        <input name="cpu_family" value="{{ a.get('cpu_family','') }}" placeholder="Core i5, Core i7, Ryzen 5..." id="f-cpu_family">
+      </div>
+
+      <div>
+        <div class="row between" style="margin-bottom:4px">
+          <div class="row" style="gap:6px">
+            <label for="f-ip_address" style="margin:0">IP address</label>
+            <span id="ip-mode-badge" class="badge b-Active" style="font-size:10px;padding:1px 6px">Auto (from ID)</span>
+          </div>
+          <button type="button" id="ip-mode-toggle" class="btn sec small" style="border:none;padding:0;background:transparent;color:var(--accent);font-weight:600">Customize</button>
+        </div>
+        <input name="ip_address" class="font-mono" value="{{ a.get('ip_address','') or '' }}" placeholder="e.g. 192.168.1.41 (Blank = Not Assigned)" id="f-ip_address">
+        <p id="ip-help" class="muted" style="margin-top:4px;font-size:11px">Auto-assigned: last two digits (<strong id="ip-tail-preview" style="color:var(--accent)">01</strong>) match Asset ID on location subnet.</p>
+      </div>
+
+      <div>
+        <label for="f-ram_gb">RAM (GB) *</label>
+        <input type="number" min="1" name="ram_gb" class="font-mono" value="{{ a.get('ram_gb','') }}" placeholder="16" id="f-ram_gb">
+      </div>
+
+      <div>
+        <label for="f-ram_type">RAM type *</label>
+        <select name="ram_type" id="f-ram_type">
+          <option value="">— choose —</option>
+          {% for o in ram_types %}<option{{ ' selected' if a.get('ram_type')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="f-storage_type">Storage type *</label>
+        <select name="storage_type" id="f-storage_type">
+          {% for o in storage_types %}<option{{ ' selected' if a.get('storage_type')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="f-storage_gb">Storage capacity (GB) *</label>
+        <input type="number" min="1" name="storage_gb" class="font-mono" value="{{ a.get('storage_gb','') }}" placeholder="512" id="f-storage_gb">
+      </div>
+
+      <div>
+        <label for="gpu-input">GPU (blank = integrated)</label>
+        <input name="gpu" id="gpu-input" value="{{ a.get('gpu','') or '' }}" placeholder="NVIDIA RTX 3060">
+      </div>
+
+      <div id="gpu-vram-container" style="display:contents">
+        {% if a.get('gpu') %}
+        <div>
+          <label for="gpu-vram-input">GPU VRAM (GB) *</label>
+          <input type="number" min="1" name="gpu_vram_gb" class="font-mono" id="gpu-vram-input" value="{{ a.get('gpu_vram_gb','') or '' }}" placeholder="12">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: Lifecycle & Status -->
+  <div class="card">
+    <div class="section-label">3. Lifecycle &amp; Operational Status</div>
+    <div class="formgrid" style="grid-template-columns:repeat(auto-fit, minmax(240px, 1fr))">
+      <div>
+        <label for="f-purchase_date">Purchase date * (YYYY-MM-DD)</label>
+        <input type="date" name="purchase_date" value="{{ a.get('purchase_date','') }}" id="f-purchase_date">
+      </div>
+
+      <div>
+        <label for="f-warranty_expiry">Warranty expiry * (YYYY-MM-DD)</label>
+        <input type="date" name="warranty_expiry" value="{{ a.get('warranty_expiry','') }}" id="f-warranty_expiry">
+      </div>
+
+      <div>
+        <label for="status-select">Operational status</label>
+        <select name="status" id="status-select">
+          {% for o in statuses %}<option{{ ' selected' if a.get('status')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4: Open Fault Details -->
+  <div id="fault-box" class="fault-box" style="display:none">
+    <h3 id="fx-title">Current fault</h3>
+    <p class="muted" id="fx-help" style="margin:0 0 12px">Shown while the PC is Faulty or Under Repair. Nothing goes into the
+      history yet: each save updates the fault and its cost, and when the PC is Operational again the whole fault
+      is recorded as one history entry. A blank fault category is saved as Unknown.</p>
+    <div class="formgrid">
+      <div>
+        <label id="fx-cat" for="f-status_category">Fault category</label>
+        <select name="status_category" id="f-status_category">
+          {% for o in fault_categories %}<option{{ ' selected' if (a.get('status_category') or 'Unknown')==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label id="fx-desc" for="f-status_detail">Fault description</label>
+        <input name="status_detail" value="{{ a.get('status_detail','') or '' }}" placeholder="What is wrong?" id="f-status_detail">
+      </div>
+      <div>
+        <label id="fx-act" for="f-status_action">Actions to be taken</label>
+        <input name="status_action" value="{{ a.get('status_action','') or '' }}" placeholder="Planned fix, or what was just done" id="f-status_action">
+      </div>
+      <div>
+        <label id="fx-tech" for="f-status_technician">Technician</label>
+        <input name="status_technician" value="{{ a.get('status_technician','') or '' }}" placeholder="Required when Under Repair" id="f-status_technician">
+      </div>
+      <div>
+        <label id="fx-date" for="f-fault_date">Date</label>
+        <input type="date" name="fault_date" value="{{ a.get('fault_date') or today }}" id="f-fault_date">
+      </div>
+      <div>
+        <label id="fx-cost" for="f-cost">Updated Cost ($)</label>
+        <input type="number" step="any" min="0" name="cost" class="font-mono" value="{{ a.get('cost') or open_total or 0 }}" placeholder="0" id="f-cost">
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:20px;gap:12px">
+    <button class="btn" type="submit">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+      {{ 'Save Asset' if new else 'Save Changes' }}
+    </button>
+    <a class="btn sec" href="{{ url_for('assets') }}">Cancel</a>
+  </div>
+</form>
+
+<script>
+// Auto-assign Asset ID and IP address:
+// When location changes -> auto-generates Asset ID -> auto-generates IP (192.168.x.n)
+// When user edits Asset ID -> auto-generates IP according to ID (taking last 2 digits)
+// Manually customizable at any time with "Customize" / "Reset to Auto" toggle button.
+(function () {
+  var NEW = {{ NEW_LOCATION|tojson }};
+  var isNewAsset = {{ 'true' if new else 'false' }};
+  var sel = document.getElementById('loc-select');
+  var inp = document.getElementById('loc-new');
+  var selWrap = document.getElementById('loc-select-wrap');
+  var newWrap = document.getElementById('loc-new-wrap');
+  var aidInput = document.getElementById('asset-id-input');
+  var aidResetBtn = document.getElementById('aid-reset-btn');
+  var ipInput = document.getElementById('f-ip_address');
+  var ipBadge = document.getElementById('ip-mode-badge');
+  var ipToggle = document.getElementById('ip-mode-toggle');
+  var ipHelp = document.getElementById('ip-help');
+
+  var subnets = {{ location_subnets|tojson }};
+  var nextSubnet = {{ next_subnet|tojson }};
+
+  var userManuallyEnteredId = false;
+  var isCustomIp = !isNewAsset && Boolean(ipInput.value.trim());
+
+  function getEffectiveLocation() {
+    var isNewLoc = sel.style.display === 'none' || sel.value === NEW;
+    return isNewLoc ? inp.value.trim() : sel.value;
+  }
+
+  function getSubnetForLoc(loc) {
+    if (!loc) return 1;
+    if (subnets[loc] !== undefined) return subnets[loc];
+    return nextSubnet;
+  }
+
+  function computeAutoIp(assetId, locationName) {
+    var subnet = getSubnetForLoc(locationName);
+    var matches = (assetId || '').match(/\d+/g);
+    var hostStr = '1';
+    if (matches && matches.length > 0) {
+      var combined = matches.join('');
+      var lastTwo = combined.length >= 2 ? combined.slice(-2) : combined;
+      var parsed = parseInt(lastTwo, 10);
+      hostStr = isNaN(parsed) || parsed === 0 ? '1' : String(parsed);
+    }
+    return '192.168.' + subnet + '.' + hostStr;
+  }
+
+  function updateIpUI() {
+    if (!ipBadge || !ipToggle || !ipHelp) return;
+    if (!isCustomIp) {
+      ipBadge.textContent = 'Auto (from ID)';
+      ipBadge.className = 'badge b-Active';
+      ipToggle.textContent = 'Customize';
+      var digits = (aidInput ? aidInput.value : '').match(/\d+/g);
+      var combined = digits ? digits.join('') : '';
+      var lastTwo = combined.length >= 2 ? combined.slice(-2) : (combined || '01');
+      var parsed = parseInt(lastTwo, 10) || 1;
+      ipHelp.innerHTML = 'Auto-assigned: last two digits (<strong style="color:var(--accent)">' + parsed + '</strong>) match Asset ID on location subnet.';
+    } else {
+      ipBadge.textContent = 'Custom IP';
+      ipBadge.className = 'badge b-Retired';
+      ipToggle.textContent = 'Reset to Auto';
+      ipHelp.innerHTML = 'Custom mode active. You can enter any IP address or click <strong>Reset to Auto</strong>.';
+    }
+  }
+
+  function syncAutoIp() {
+    if (isCustomIp) return;
+    var loc = getEffectiveLocation();
+    var aid = aidInput ? aidInput.value.trim() : '';
+    if (!loc || !aid) return;
+    ipInput.value = computeAutoIp(aid, loc);
+    updateIpUI();
+  }
+
+  if (aidInput) {
+    aidInput.addEventListener('input', function () {
+      userManuallyEnteredId = isNewAsset && aidInput.value.trim().length > 0;
+      if (aidResetBtn) aidResetBtn.style.display = userManuallyEnteredId ? 'inline' : 'none';
+      syncAutoIp();
+    });
+  }
+
+  if (aidResetBtn) {
+    aidResetBtn.addEventListener('click', function () {
+      userManuallyEnteredId = false;
+      aidResetBtn.style.display = 'none';
+      updateNextId();
+    });
+  }
+
+  if (ipInput) {
+    ipInput.addEventListener('input', function () {
+      isCustomIp = true;
+      updateIpUI();
+    });
+  }
+
+  if (ipToggle) {
+    ipToggle.addEventListener('click', function () {
+      if (!isCustomIp) {
+        isCustomIp = true;
+        ipInput.focus();
+      } else {
+        isCustomIp = false;
+        syncAutoIp();
+      }
+      updateIpUI();
+    });
+  }
+
+  function updateNextId() {
+    if (!isNewAsset || !aidInput) return;
+    if (userManuallyEnteredId && aidInput.value.trim()) return;
+    var loc = getEffectiveLocation();
+    if (!loc) return;
+    fetch('/api/next-asset-id?location=' + encodeURIComponent(loc))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.asset_id && aidInput && (!userManuallyEnteredId || !aidInput.value.trim())) {
+          aidInput.value = d.asset_id;
+          syncAutoIp();
+        }
+      })
+      .catch(function () {});
+  }
+
+  function onLocationChange() {
+    updateNextId();
+    syncAutoIp();
+  }
+
+  function toNew() {
+    sel.style.display = 'none';
+    inp.style.display = '';
+    inp.focus();
+  }
+  function toList() {
+    inp.style.display = 'none';
+    inp.value = '';
+    sel.style.display = '';
+    sel.value = '';
+    onLocationChange();
+  }
+
+  sel.addEventListener('change', function () {
+    if (sel.value === NEW) toNew();
+    else onLocationChange();
+  });
+  inp.addEventListener('blur', function () {
+    if (!inp.value.trim()) toList();
+    else onLocationChange();
+  });
+  inp.addEventListener('input', onLocationChange);
+  inp.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') toList();
+  });
+
+  if (isNewAsset && sel.value && sel.value !== NEW && !aidInput.value) {
+    updateNextId();
+  } else if (isNewAsset && aidInput.value && !ipInput.value) {
+    syncAutoIp();
+  }
+  updateIpUI();
+})();
+
+// Dynamic GPU VRAM field
+(function () {
+  var gpuInput = document.getElementById('gpu-input');
+  var container = document.getElementById('gpu-vram-container');
+  if (!gpuInput || !container) return;
+  var cachedVram = {{ (a.get('gpu_vram_gb','') or '')|string|tojson }};
+
+  function syncGpu() {
+    var hasGpu = gpuInput.value.trim().length > 0;
+    var currentInput = document.getElementById('gpu-vram-input');
+    if (hasGpu) {
+      if (!currentInput) {
+        var wrap = document.createElement('div');
+        var lab = document.createElement('label');
+        lab.htmlFor = 'gpu-vram-input';
+        lab.textContent = 'GPU VRAM (GB) *';
+        var inp = document.createElement('input');
+        inp.name = 'gpu_vram_gb';
+        inp.id = 'gpu-vram-input';
+        inp.type = 'number';
+        inp.min = '1';
+        inp.className = 'font-mono';
+        inp.value = cachedVram || '';
+        inp.placeholder = '12';
+        wrap.appendChild(lab);
+        wrap.appendChild(inp);
+        container.appendChild(wrap);
+      }
+    } else {
+      if (currentInput) {
+        if (currentInput.value) cachedVram = currentInput.value;
+        container.innerHTML = '';
+      }
+    }
+  }
+  gpuInput.addEventListener('input', syncGpu);
+  gpuInput.addEventListener('change', syncGpu);
+  syncGpu();
+})();
+
+// Fault Box Visibility & Required Labels
+(function () {
+  var st = document.getElementById('status-select'), box = document.getElementById('fault-box');
+  var title = document.getElementById('fx-title'), help = document.getElementById('fx-help');
+  var was = {{ (current_status or '')|tojson }};
+  function mark(id, text, req) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text + (req ? ' *' : '');
+  }
+  function sync() {
+    var s = st.value;
+    var closing = !!was && was !== 'Operational' && s === 'Operational';
+    var open = s === 'Faulty' || s === 'Under Repair';
+    box.style.display = (open || closing) ? '' : 'none';
+    title.textContent = closing ? 'Closing the fault: every field is required' : 'Current fault';
+    help.style.display = closing ? 'none' : '';
+    mark('fx-cat', 'Fault category', closing);
+    mark('fx-desc', 'Fault description', closing);
+    mark('fx-act', closing ? 'Action taken' : 'Actions to be taken', closing);
+    mark('fx-tech', 'Technician', closing || s === 'Under Repair');
+    mark('fx-date', 'Date', open || closing);
+  }
+  st.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}

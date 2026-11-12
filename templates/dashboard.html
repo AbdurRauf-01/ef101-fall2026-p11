@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+{# One bar list. The 5 largest rows always show; the rest sit behind "Show all" so long lists stay compact. #}
+{% macro bar_rows(rows, color='') -%}
+  {% for label, n, w in rows[:5] %}
+  <div class="bar">
+    <div class="bar-row">
+      <span class="lab" title="{{ label }}">{{ label }}</span>
+      <span class="val">{{ n }}</span>
+    </div>
+    <div class="track"><div class="fill" style="width:{{ w }}%;{{ 'background:' ~ color ~ ';' if color }}"></div></div>
+  </div>
+  {% endfor %}
+  {% if rows|length > 5 %}
+  <details class="more"><summary><span class="when-closed">▾ Show all {{ rows|length }}</span><span class="when-open">▴ Show top 5 only</span></summary>
+  {% for label, n, w in rows[5:] %}
+  <div class="bar">
+    <div class="bar-row">
+      <span class="lab" title="{{ label }}">{{ label }}</span>
+      <span class="val">{{ n }}</span>
+    </div>
+    <div class="track"><div class="fill" style="width:{{ w }}%;{{ 'background:' ~ color ~ ';' if color }}"></div></div>
+  </div>
+  {% endfor %}
+  </details>
+  {% endif %}
+{%- endmacro %}
+
+<div class="row between" style="margin-bottom:20px;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1>System Dashboard</h1>
+    <div class="subtitle">Real-time telemetry, hardware allocation, and failure reliability metrics.</div>
+  </div>
+  <div>
+    <a class="btn sec" href="{{ url_for('assets') }}">View All Assets</a>
+  </div>
+</div>
+
+<!-- 8 KPI Cards Grid -->
+<div class="grid stats4">
+  <!-- Total Active -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Total active assets</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+      </svg>
+    </div>
+    <div class="n">{{ stats.total }}</div>
+    <div class="stat-sub">Across {{ locations|length }} locations</div>
+  </div>
+
+  <!-- Operational -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Operational</span>
+      <svg style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+    </div>
+    <div class="n" style="color:var(--ok)">{{ stats.operational }}</div>
+    <div class="stat-sub">{{ ((stats.operational * 100 / stats.total)|round|int) if stats.total else 0 }}% fleet health</div>
+  </div>
+
+  <!-- Needing Attention -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Needing attention</span>
+      <svg style="color:var(--warn)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </div>
+    <div class="n" style="color:var(--warn)">{{ stats.attention }}</div>
+    <div class="stat-sub">Open errors requiring fix</div>
+  </div>
+
+  <!-- Retired -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Retired</span>
+      <svg style="color:var(--muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+        <rect x="1" y="3" width="22" height="5"></rect>
+        <line x1="10" y1="12" x2="14" y2="12"></line>
+      </svg>
+    </div>
+    <div class="n" style="color:var(--muted)">{{ stats.retired }}</div>
+    <div class="stat-sub">Kept for audit history</div>
+  </div>
+
+  <!-- Faulty -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Faulty ({{ stats.repair }} more under repair)</span>
+      <svg style="color:var(--bad)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <div class="n" style="color:var(--bad)">{{ stats.faulty }}</div>
+    <div class="stat-sub">Current breakdowns</div>
+  </div>
+
+  <!-- Fault Events -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Fault events</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+      </svg>
+    </div>
+    <div class="n">{{ stats.events }}</div>
+    <div class="stat-sub">Logged across lifecycle</div>
+  </div>
+
+  <!-- Out of Warranty -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Out of warranty</span>
+      <svg style="color:var(--muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </div>
+    <div class="n">{{ stats.out_of_warranty }}</div>
+    <div class="stat-sub">Support coverage expired</div>
+  </div>
+
+  <!-- Maintenance Cost -->
+  <div class="card stat">
+    <div class="stat-top">
+      <span class="l">Total maintenance cost</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"></line>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+      </svg>
+    </div>
+    <div class="n small">{{ stats.total_cost|money }}</div>
+    <div class="stat-sub">Cumulative repair costs</div>
+  </div>
+</div>
+
+<!-- Hardware Fleet Distribution -->
+<div class="section-label">Hardware Fleet Distribution</div>
+<div class="grid g3">
+{% for title, rows in charts.items() %}
+  <div class="card" style="margin-bottom:0">
+    <div class="row between" style="margin-bottom:12px">
+      <h2>{{ title }}</h2>
+      <span class="muted font-mono" style="font-size:11px">{{ rows|length }} types</span>
+    </div>
+    {{ bar_rows(rows) }}
+  </div>
+{% endfor %}
+</div>
+
+<!-- Failure & Reliability Analysis -->
+<div class="section-label" style="margin-top:28px">Failure &amp; Reliability Analysis</div>
+<div class="grid g2">
+  <!-- Fault Events by Category -->
+  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between">
+    <div>
+      <div class="row between" style="margin-bottom:14px">
+        <h2>Fault events by category</h2>
+        <span class="muted font-mono" style="font-size:11px">{{ stats.events }} total</span>
+      </div>
+      {{ bar_rows(fault_cats, '#f43f5e') }}
+    </div>
+    {% if fault_cats and fault_cats[0][1] > 0 %}
+    <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)" class="row between">
+      <span>Most common fault:</span>
+      <span style="font-weight:600;color:var(--bad)">{{ fault_cats[0][0] }} ({{ fault_cats[0][1] }} events)</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Most Frequently Failing Assets -->
+  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between">
+    <div>
+      <div class="row between" style="margin-bottom:14px">
+        <h2>Most frequently failing assets</h2>
+        <span class="muted" style="font-size:11px">Top 5 by events</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Asset</th><th>Model</th><th style="text-align:center">Events</th><th class="right">Cost</th></tr>
+          </thead>
+          <tbody>
+          {% for r in top_assets %}
+            <tr>
+              <td><a href="{{ url_for('asset_detail', asset_id=r.asset_id) }}" style="font-weight:600">{{ r.asset_id }}</a></td>
+              <td>{{ r.model }}</td>
+              <td style="text-align:center;font-family:var(--font-mono)">{{ r.n }}</td>
+              <td class="right nw" style="font-family:var(--font-mono)">{{ r.cost|money }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="muted">No failure records logged yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% if top_assets %}
+    <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)" class="row between">
+      <span>Most failing asset:</span>
+      <span style="font-weight:600;color:var(--accent)">{{ top_assets[0].asset_id }} ({{ top_assets[0].n }} events)</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Assets Needing Attention Section -->
+<div class="card scroll" id="attention" style="margin-top:28px">
+  <div class="card-header row between">
+    <div class="row" style="gap:8px">
+      <svg style="width:16px;height:16px;color:var(--warn)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <h2>Assets needing attention ({{ attention|length }})</h2>
+    </div>
+    <span class="muted" style="font-size:12px">Current open defects requiring repair</span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Asset</th><th>Model</th><th>Location</th><th>Status</th><th>Current error</th></tr>
+    </thead>
+    <tbody>
+    {% for r in attention %}
+      <tr>
+        <td><a href="{{ url_for('asset_detail', asset_id=r.asset_id) }}" style="font-weight:600">{{ r.asset_id }}</a></td>
+        <td>{{ r.model }}</td>
+        <td>{{ r.location }}</td>
+        <td><span class="badge b-{{ r.status|replace(' ', '-') }}">{{ r.status }}</span></td>
+        <td><b>{{ r.status_category or 'Unknown' }}</b>: {{ r.status_detail or 'Not recorded' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="muted" style="padding:16px 20px">All machines are currently operational. Zero open defects detected.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

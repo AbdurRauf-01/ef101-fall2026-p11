@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Hardware Inventory{% endblock %} - EF101-P11</title>
+<script>
+  // Runs before paint so theme & sidebar width apply immediately with no flash
+  (function () {
+    var root = document.documentElement;
+    var theme = localStorage.getItem('inv-theme');
+    if (!theme) theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    root.setAttribute('data-theme', theme);
+    var w = parseInt(localStorage.getItem('inv-sidebar'), 10);
+    if (w >= 180 && w <= 420) root.style.setProperty('--sidebar-w', w + 'px');
+  })();
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+{% set ep = request.endpoint or '' %}
+<div class="shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" aria-label="Site navigation">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="12" x2="2" y2="12"></line>
+          <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+          <line x1="6" y1="16" x2="6.01" y2="16"></line>
+          <line x1="10" y1="16" x2="10.01" y2="16"></line>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">Hardware Inventory</div>
+        <div class="brand-sub">EF101-P11 System &middot; v{{ app_version }}</div>
+      </div>
+    </div>
+
+    <nav aria-label="Main">
+      <div class="group">Overview</div>
+      <a class="{{ 'on' if ep == 'dashboard' }}" href="{{ url_for('dashboard') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9"></rect>
+            <rect x="14" y="3" width="7" height="5"></rect>
+            <rect x="14" y="12" width="7" height="9"></rect>
+            <rect x="3" y="16" width="7" height="5"></rect>
+          </svg>
+          Dashboard
+        </span>
+      </a>
+
+      <div class="group">Assets</div>
+      <a class="{{ 'on' if ep in ('assets', 'asset_detail', 'asset_edit') }}" href="{{ url_for('assets') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+          Assets List
+        </span>
+        <span class="nav-badge">{{ active_asset_count }}</span>
+      </a>
+      <a class="{{ 'on' if ep == 'asset_new' }}" href="{{ url_for('asset_new') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+          Add Asset
+        </span>
+      </a>
+      <a class="{{ 'on' if ep == 'scan' }}" href="{{ url_for('scan') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <line x1="7" y1="12" x2="17" y2="12"></line>
+          </svg>
+          Scan QR
+        </span>
+      </a>
+      <a class="{{ 'on' if ep in ('labels', 'asset_label') }}" href="{{ url_for('labels') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+            <line x1="14" y1="14" x2="14" y2="14.01"></line><line x1="21" y1="14" x2="21" y2="14.01"></line>
+            <line x1="14" y1="21" x2="17.5" y2="21"></line><line x1="21" y1="17.5" x2="21" y2="21"></line>
+          </svg>
+          QR Labels
+        </span>
+      </a>
+      <a href="{{ url_for('export_assets') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="12" y2="18"></line>
+            <line x1="15" y1="15" x2="12" y2="18"></line>
+          </svg>
+          Export Assets CSV
+        </span>
+      </a>
+
+      <div class="group">Maintenance</div>
+      <a class="{{ 'on' if ep == 'maintenance' }}" href="{{ url_for('maintenance') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          Fault History
+        </span>
+        <span class="nav-badge">{{ total_events_count }}</span>
+      </a>
+      <a href="{{ url_for('export_maintenance') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="12" y2="18"></line>
+            <line x1="15" y1="15" x2="12" y2="18"></line>
+          </svg>
+          Export Maintenance CSV
+        </span>
+      </a>
+
+      <div class="group">About &amp; Docs</div>
+      <a class="{{ 'on' if ep == 'about_schema' }}" href="{{ url_for('about_schema') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+          Project Schema
+        </span>
+      </a>
+      <a class="{{ 'on' if ep == 'about_credits' }}" href="{{ url_for('about_credits') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Credits
+        </span>
+      </a>
+      <a class="{{ 'on' if ep == 'about_privacy' }}" href="{{ url_for('about_privacy') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+          Privacy Policy
+        </span>
+      </a>
+      <a class="{{ 'on' if ep == 'about_contact' }}" href="{{ url_for('about_contact') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          Contact
+        </span>
+      </a>
+      <a href="{{ url_for('github') }}" target="_blank" rel="noopener" title="Opens GitHub in a new tab">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          GitHub Repo
+        </span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn sec" id="theme-toggle" type="button" style="justify-content:space-between">
+        <span class="row" style="gap:8px" id="theme-icon-label">
+          <svg id="theme-sun-icon" style="width:14px;height:14px;display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg id="theme-moon-icon" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <span id="theme-text">Dark mode</span>
+        </span>
+        <span class="muted" id="theme-hint" style="font-size:10px">Light</span>
+      </button>
+
+      <form method="post" action="{{ url_for('api_reset_demo') }}" onsubmit="return confirm('Reset all inventory data back to the demo state (40 demo assets and 43 maintenance records)? Current changes will be overwritten.')">
+        <button type="submit" class="btn sec" style="width:100%;font-size:11px;color:var(--muted);border:none;background:transparent;box-shadow:none">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+          Reset to demo data
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Resizer Handle -->
+  <div class="resizer" id="resizer" tabindex="0" role="separator" aria-orientation="vertical"
+       aria-label="Resize sidebar" title="Drag to resize (arrow keys also work, Home resets)"></div>
+
+  <!-- Content Column -->
+  <div class="content-col">
+    <!-- Top Header Bar -->
+    <header class="top-header">
+      <!-- Breadcrumbs -->
+      <div class="breadcrumbs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="12" x2="2" y2="12"></line>
+          <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+          <line x1="6" y1="16" x2="6.01" y2="16"></line>
+          <line x1="10" y1="16" x2="10.01" y2="16"></line>
+        </svg>
+        {% if ep == 'dashboard' %}
+          <a class="crumb-link" href="{{ url_for('dashboard') }}">System</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Dashboard</span>
+        {% elif ep == 'assets' %}
+          <a class="crumb-link" href="{{ url_for('assets') }}">Inventory</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Assets List</span>
+        {% elif ep == 'asset_new' %}
+          <a class="crumb-link" href="{{ url_for('assets') }}">Inventory</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Add New Asset</span>
+        {% elif ep == 'asset_detail' %}
+          <a class="crumb-link" href="{{ url_for('assets') }}">Inventory</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">{{ (a.asset_id if a is defined and a.asset_id else 'Asset Detail') }}</span>
+        {% elif ep == 'asset_edit' %}
+          <a class="crumb-link" href="{{ url_for('assets') }}">Inventory</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <a class="crumb-link" href="{{ url_for('asset_detail', asset_id=request.view_args.get('asset_id','')) }}">{{ request.view_args.get('asset_id','') }}</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Edit Asset</span>
+        {% elif ep == 'maintenance' %}
+          <a class="crumb-link" href="{{ url_for('maintenance') }}">Maintenance</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Fault History</span>
+        {% elif ep == 'about_schema' %}
+          <a class="crumb-link" href="{{ url_for('dashboard') }}">Documentation</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Project Schema</span>
+        {% elif ep == 'about_credits' %}
+          <a class="crumb-link" href="{{ url_for('dashboard') }}">Project Info</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Credits &amp; Team</span>
+        {% elif ep == 'about_privacy' %}
+          <a class="crumb-link" href="{{ url_for('dashboard') }}">Project Info</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Privacy Policy</span>
+        {% elif ep == 'about_contact' %}
+          <a class="crumb-link" href="{{ url_for('dashboard') }}">Project Info</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Contact</span>
+        {% else %}
+          <span class="crumb-active">Hardware Inventory</span>
+        {% endif %}
+      </div>
+
+      <!-- Global Search -->
+      <form class="header-search" action="{{ url_for('assets') }}" method="get">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="Search assets (ID, model, CPU, IP) or filters...">
+      </form>
+
+      <!-- Actions -->
+      <div class="header-actions">
+        {% if attention_count and attention_count > 0 %}
+          <a href="{{ url_for('dashboard') }}#attention" class="attention-pill" title="{{ attention_count }} assets currently need attention">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span class="count">{{ attention_count }}</span>
+            <span style="font-size:11px">needing attention</span>
+          </a>
+        {% endif %}
+
+        <a class="btn" href="{{ url_for('asset_new') }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add Asset
+        </a>
+      </div>
+    </header>
+
+    <!-- Content Body -->
+    <div class="content">
+      <main id="main-content">
+        {% with msgs = get_flashed_messages(with_categories=true) %}
+          {% for cat, m in msgs %}
+            <div class="flash {{ cat }}" role="alert">
+              {% if cat == 'success' %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {% elif cat == 'danger' %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              {% else %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              {% endif %}
+              <span>{{ m }}</span>
+            </div>
+          {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+
+  // Theme toggle
+  var btn = document.getElementById('theme-toggle');
+  var sun = document.getElementById('theme-sun-icon');
+  var moon = document.getElementById('theme-moon-icon');
+  var txt = document.getElementById('theme-text');
+  var hnt = document.getElementById('theme-hint');
+
+  function paintButton() {
+    var isDark = root.getAttribute('data-theme') === 'dark';
+    if (sun) sun.style.display = isDark ? 'inline-block' : 'none';
+    if (moon) moon.style.display = isDark ? 'none' : 'inline-block';
+    if (txt) txt.textContent = isDark ? 'Light mode' : 'Dark mode';
+    if (hnt) hnt.textContent = isDark ? 'Dark' : 'Light';
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('inv-theme', next);
+      paintButton();
+    });
+    paintButton();
+  }
+
+  // Sidebar resizer: drag or keyboard arrows
+  var MIN = 200, MAX = 380, DEFAULT = 256;
+  var handle = document.getElementById('resizer');
+  function currentWidth() {
+    return parseInt(getComputedStyle(root).getPropertyValue('--sidebar-w'), 10) || DEFAULT;
+  }
+  function setWidth(w) {
+    w = Math.max(MIN, Math.min(MAX, Math.round(w)));
+    root.style.setProperty('--sidebar-w', w + 'px');
+    localStorage.setItem('inv-sidebar', w);
+  }
+  var dragging = false;
+  if (handle) {
+    handle.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      handle.setPointerCapture(e.pointerId);
+      document.body.classList.add('resizing');
+    });
+    handle.addEventListener('pointermove', function (e) { if (dragging) setWidth(e.clientX); });
+    function stopDrag() { dragging = false; document.body.classList.remove('resizing'); }
+    handle.addEventListener('pointerup', stopDrag);
+    handle.addEventListener('pointercancel', stopDrag);
+    handle.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft')  { setWidth(currentWidth() - 10); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { setWidth(currentWidth() + 10); e.preventDefault(); }
+      if (e.key === 'Home')       { setWidth(DEFAULT); e.preventDefault(); }
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}{{ a.asset_id }}{% endblock %}
+{% block content %}
+{% set pref = a if a.status != 'Operational' else None %}
+<div class="row between" style="margin-bottom:20px;flex-wrap:wrap;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
+  <div class="row" style="gap:12px">
+    <a class="btn sec" href="{{ url_for('assets') }}" style="padding:6px 10px" title="Back to assets list">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </a>
+    <div>
+      <div class="row" style="gap:8px">
+        <h1>{{ a.asset_id }}</h1>
+        {% if not a.active %}<span class="badge b-Retired">Retired</span>{% endif %}
+      </div>
+      <div class="subtitle">{{ a.manufacturer }} {{ a.model }} &middot; {{ a.location }}</div>
+    </div>
+  </div>
+
+  <div class="row" style="gap:8px">
+    <a class="btn sec" href="{{ url_for('asset_edit', asset_id=a.asset_id) }}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      Edit
+    </a>
+    {% if a.active %}
+    <form method="post" action="{{ url_for('asset_retire', asset_id=a.asset_id) }}"
+          onsubmit="return confirm('Retire this asset? Its history is kept.')">
+      <button class="btn danger" type="submit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+        Retire
+      </button>
+    </form>
+    {% else %}
+    <form method="post" action="{{ url_for('asset_reactivate', asset_id=a.asset_id) }}">
+      <button class="btn" type="submit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        Reactivate
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <div class="section-label">Hardware &amp; Location</div>
+    <dl>
+      <dt>Manufacturer / model</dt><dd>{{ a.manufacturer }} {{ a.model }}</dd>
+      <dt>CPU</dt><dd>{{ a.cpu }} ({{ a.cpu_family }})</dd>
+      <dt>RAM</dt><dd class="font-mono">{{ a.ram_gb }} GB {{ a.ram_type }}</dd>
+      <dt>Storage</dt><dd class="font-mono">{{ a.storage_type }}, {{ a.storage_gb }} GB</dd>
+      <dt>GPU</dt><dd>{{ a.gpu or 'Integrated only' }}</dd>
+      {% if a.gpu and a.gpu_vram_gb %}<dt>GPU VRAM</dt><dd>{{ a.gpu_vram_gb }} GB</dd>{% endif %}
+      <dt>Operating system</dt><dd>{{ a.os }}</dd>
+      <dt>IP address</dt><dd>{{ a.ip_address or 'Not Assigned' }}</dd>
+      <dt>Location</dt><dd>{{ a.location }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Status &amp; Warranty</div>
+    <dl>
+      <dt>Operational status</dt><dd><span class="badge b-{{ a.status|replace(' ', '-') }}">{{ a.status }}</span></dd>
+      <dt>Purchase date</dt><dd class="font-mono">{{ a.purchase_date }}</dd>
+      <dt>Warranty expiry</dt><dd class="font-mono">{{ a.warranty_expiry }} <span class="badge b-{{ warranty|replace(' ', '-') }}">{{ warranty }}</span></dd>
+      <dt>Maintenance events</dt><dd class="font-mono">{{ events|length }}</dd>
+      <dt>Total repair cost</dt><dd class="font-mono" style="color:var(--ink)">{{ total_cost|money }}</dd>
+    </dl>
+  </div>
+</div>
+
+{% if qr_svg %}
+<div class="card">
+  <div class="section-label">QR label</div>
+  <div class="qr-card">
+    <div class="qr" role="img" aria-label="QR code for {{ a.asset_id }}">{{ qr_svg|safe }}</div>
+    <div style="flex:1;min-width:220px">
+      <p style="margin:0 0 6px 0">Any phone camera shows the specs stored in this code, with no network. It is a snapshot: if a spec or the status changes, print the label again. The Scan page of this app opens the live record.</p>
+      <pre class="qr-text font-mono">{{ qr_text }}</pre>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <a class="btn" href="{{ url_for('asset_label', asset_id=a.asset_id) }}">Print label</a>
+        <a class="btn sec" href="{{ url_for('asset_qr_svg', asset_id=a.asset_id, download=1) }}">Download SVG</a>
+        <a class="btn sec" href="{{ url_for('scan') }}">Scan a label</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+<!-- Current Fault Card -->
+<div class="card scroll">
+  <div class="card-header row between">
+    <div class="row" style="gap:8px">
+      <h2 style="margin:0">Current fault</h2>
+    </div>
+    {% if a.status != 'Operational' %}
+    <a class="btn sec small" href="{{ url_for('asset_fault_edit', asset_id=a.asset_id) }}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      Edit fault
+    </a>
+    {% endif %}
+  </div>
+  <table class="aligned-table">
+    <colgroup>
+      <col class="col-date">
+      <col class="col-cat">
+      <col class="col-fault">
+      <col class="col-act">
+      <col class="col-tech">
+      <col class="col-cost">
+      <col class="col-action">
+    </colgroup>
+    <thead>
+      <tr><th>Date</th><th>Category</th><th>Fault</th><th>Actions to be taken</th><th>Technician</th><th class="right">Cost</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+    {% if a.status == 'Operational' %}
+      <tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td class="right">-</td><td>-</td></tr>
+    {% else %}
+      <tr>
+        <td class="nw font-mono">{{ a.status_date }}</td>
+        <td>{{ a.status_category }}</td>
+        <td>{{ a.status_detail or 'Not recorded' }}</td>
+        <td>{{ a.status_action or 'Not recorded' }}</td>
+        <td>{{ a.status_technician or 'Not recorded' }}</td>
+        <td class="right nw font-mono">{{ (a.status_cost or 0)|money }}</td>
+        <td class="nw actions">
+          <a class="btn sec small" href="{{ url_for('asset_fault_edit', asset_id=a.asset_id) }}">Edit</a>
+        </td>
+      </tr>
+    {% endif %}
+    </tbody>
+  </table>
+
+  {% if a.status != 'Operational' %}
+  <div style="padding:16px 20px 8px 20px;border-top:1px solid var(--line)">
+    <div class="row between">
+      <h3 style="margin:0;font-size:0.8125rem;font-weight:700">Steps so far <span class="muted" style="font-weight:400">(recorded in history when the PC is Operational again)</span></h3>
+    </div>
+  </div>
+  <table class="aligned-table">
+    <colgroup>
+      <col class="col-date">
+      <col class="col-cat">
+      <col class="col-fault">
+      <col class="col-act">
+      <col class="col-tech">
+      <col class="col-cost">
+      <col class="col-action">
+    </colgroup>
+    <thead>
+      <tr><th>Date</th><th colspan="3">Action taken</th><th colspan="2">Technician</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+    {% for s in steps %}
+      <tr>
+        <td class="nw font-mono">{{ s.step_date }}</td>
+        <td colspan="3">{{ s.action or 'Not recorded' }}</td>
+        <td colspan="2">{{ s.technician or 'Not recorded' }}</td>
+        <td class="nw actions">
+          <a class="btn sec small" href="{{ url_for('step_edit', step_id=s.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('step_delete', step_id=s.id) }}" style="display:inline" onsubmit="return confirm('Remove this step?')">
+            <button class="btn danger small" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="muted" style="padding:14px 20px">No steps yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+<!-- Maintenance History Card -->
+<div class="card scroll">
+  <div class="card-header row between">
+    <h2>Maintenance history</h2>
+    <span class="muted font-mono" style="font-size:11px">{{ events|length }} records</span>
+  </div>
+  <table class="aligned-table">
+    <colgroup>
+      <col class="col-date">
+      <col class="col-cat">
+      <col class="col-fault">
+      <col class="col-act">
+      <col class="col-tech">
+      <col class="col-cost">
+      <col class="col-action">
+    </colgroup>
+    <thead>
+      <tr><th>Date</th><th>Category</th><th>Fault</th><th>Action taken</th><th>Technician</th><th class="right">Cost</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+    {% for e in events %}
+      <tr>
+        <td class="nw font-mono">{{ e.event_date }}</td>
+        <td>{{ e.fault_category }}</td>
+        <td>{{ e.fault_description or 'Not recorded' }}</td>
+        <td>{{ e.action_taken or 'Not recorded' }}</td>
+        <td>{{ e.technician or 'Not recorded' }}</td>
+        <td class="right nw font-mono">{{ e.cost_usd|money }}</td>
+        <td class="nw actions">
+          <a class="btn sec small" href="{{ url_for('maintenance_event_edit', event_id=e.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('maintenance_event_delete', event_id=e.id) }}" style="display:inline" onsubmit="return confirm('Delete this maintenance record?')">
+            <button class="btn danger small" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="muted" style="padding:20px;text-align:center">No maintenance events recorded.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Log Maintenance Event Card -->
+<div class="card" id="log-card">
+  <h2>Log a fault / maintenance event</h2>
+  <div class="subtitle" style="margin-bottom:16px">Record diagnostic steps, add repair notes, or transition asset status to Operational.</div>
+  <form method="post" action="{{ url_for('maintenance_add', asset_id=a.asset_id) }}" novalidate>
+    <div class="formgrid">
+      <div>
+        <label for="f-event_date">Date *</label>
+        <input type="date" name="event_date" value="{{ today }}" id="f-event_date">
+      </div>
+      <div>
+        <label id="lbl-cat" for="f-fault_category">Fault category</label>
+        <select name="fault_category" id="f-fault_category">
+          <option value="">— choose —</option>
+          {% for o in fault_categories %}<option{{ ' selected' if pref and pref.status_category==o }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label id="lbl-desc" for="f-fault_description">Fault description</label>
+        <input name="fault_description" value="{{ pref.status_detail if pref else '' }}" placeholder="What is wrong?" id="f-fault_description">
+      </div>
+      <div>
+        <label id="lbl-act" for="f-action_taken">Action taken</label>
+        <input name="action_taken" value="{{ pref.status_action if pref else '' }}" placeholder="Actions performed" id="f-action_taken">
+      </div>
+      <div>
+        <label id="lbl-tech" for="f-technician">Technician</label>
+        <input name="technician" value="{{ pref.status_technician if pref else '' }}" placeholder="Name of technician" id="f-technician">
+      </div>
+      <div>
+        <label for="f-cost">Updated Cost ($)</label>
+        <input type="number" step="any" min="0" name="cost" class="font-mono" value="{{ ((a.status_cost if a.status_cost is not none else open_total) or 0) }}" placeholder="0" id="f-cost">
+      </div>
+      <div>
+        <label for="ev-status">Update asset status to *</label>
+        <select name="set_status" id="ev-status">
+    <option value="">— choose —</option>
+    <option>Operational</option><option>Faulty</option><option>Under Repair</option></select>
+      </div>
+    </div>
+    <p style="margin-top:16px">
+      <button class="btn" type="submit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        Log event
+      </button>
+    </p>
+  </form>
+</div>
+
+<script>
+(function () {
+  var st = document.getElementById('ev-status');
+  function mark(id, text, req) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text + (req ? ' *' : '');
+  }
+  function sync() {
+    var s = st.value, fix = s === 'Operational', repair = s === 'Under Repair', progress = s === 'Faulty' || repair;
+    mark('lbl-cat', 'Fault category', fix);
+    mark('lbl-desc', 'Fault description', fix);
+    mark('lbl-act', progress ? 'Action to be taken' : 'Action taken', fix);
+    mark('lbl-tech', 'Technician', fix || repair);
+  }
+  if (st) {
+    st.addEventListener('change', sync);
+    sync();
+  }
+})();
+</script>
+{% endblock %}
