@@ -82,7 +82,7 @@ What the launcher does: finds Python 3.8+ (installs it with winget/python.org on
 - **First launch:** an empty database is created with the six standard places. Add assets from the app.
 - **Demo data (optional):** `python seed.py` replaces the data with 40 demo assets. It asks you to type YES first when there is data.
 - **Several copies at once:** each copy has its own data file and its own address, so you can run an older version (for example v7) next to this one to compare.
-- **Tests:** `python test_app.py` runs every check (290 in version 21) on a temporary database and prints a results table.
+- **Tests:** `python test_app.py` runs every check (292 in version 21) on a temporary database and prints a results table.
 
 ## Manual run (no launcher)
 
@@ -115,7 +115,7 @@ Use this to open the project by hand after getting it from GitHub (main branch),
 8. **Start the app:** `python app.py` (optional: `python app.py --port 8000` to choose the port).
 9. **Open the address it prints** in your browser, normally http://127.0.0.1:5000 (the next free port if 5000 is busy). Use the address shown in your own terminal.
 10. **Stop the app** with `Ctrl+C` in the terminal. Leave the virtual environment with `deactivate`.
-11. **Run the tests (optional):** with the venv still active, `python test_app.py`. It uses a temporary database, so your data is not touched, and must end with `290/290 passed`.
+11. **Run the tests (optional):** with the venv still active, `python test_app.py`. It uses a temporary database, so your data is not touched, and must end with `292/292 passed`.
 
 Next time you only need steps 3, 5 and 8: open the terminal in the folder, activate the venv, run `python app.py`. To get later changes from GitHub, run `git pull` (clone) or download the ZIP again (keep your own `inventory.db` if you want to keep your data).
 
@@ -166,7 +166,7 @@ Linux notes:
 - `The virtual environment was not created successfully` or `ensurepip is not available` on Ubuntu: `python3-venv` is missing; run the Ubuntu command in step A, delete the half-made folder with `rm -rf venv`, and repeat step C.
 - `error: externally-managed-environment` when running pip: you are outside the venv. Run `source venv/bin/activate` first; do not use `--break-system-packages`.
 - `command not found: git`: install it as in step A, or use the ZIP download instead.
-- Optional: `python seed.py` resets the data to the demo data (type YES), and `python test_app.py` runs the 290 checks.
+- Optional: `python seed.py` resets the data to the demo data (type YES), and `python test_app.py` runs the 292 checks.
 - If a double-click launcher does not run, give it permission once: `chmod +x start.sh reset-demo-data.sh scripts/*.sh`, then `./start.sh`. This manual route does not need it.
 
 ## Files
