@@ -1,20 +1,13 @@
 # EF101-P11 Computer Hardware Inventory and Maintenance System
 
 > # **Project History Notice:** 
-> ## For all commits, and project history prior to **November 9, 2026**, please visit the legacy repository: [AbdurRauf-01/ef101-p11](https://github.com/AbdurRauf-01/ef101-p11).
-
-## Version history
-
-- **Version 21 and after (from 12 Nov 2026):** see [`CHANGELOG.md`](https://github.com/AbdurRauf-01/ef101-fall2026-p11/blob/main/CHANGELOG.md) in this repository.
-- **Version 20 (12 Nov 2026):** see the [`changelogs`](https://github.com/AbdurRauf-01/ef101-fall2026-p11/tree/main/changelogs) directory in this repository (`v20.md`).
-- **Version 19 (9 Nov 2026):** see the [`changelogs`](https://github.com/AbdurRauf-01/ef101-fall2026-p11/tree/main/changelogs) directory in this repository (`v19.md`).
-- **Version 18 and before:** see the [`changelogs`](https://github.com/AbdurRauf-01/ef101-p11/tree/main/changelogs) directory in the legacy repository.
+> ## For all project history and commits prior to **November 9, 2026** (v18 and earlier), please visit the first legacy repository: [AbdurRauf-01/ef101-p11](https://github.com/AbdurRauf-01/ef101-p11).
+> ## For all project history and commits on **November 9, 2026** (v19), please visit the second legacy repository: [irtazaraza7184/ef101-p11](https://github.com/irtazaraza7184/ef101-p11).
 
 Flask + SQLite web app that tracks computer assets (specs, location, warranty, status) and their maintenance/fault history, with a dashboard and CSV export. All data in `inventory.db` is **DEMO data**, not real assets.
 
 ## Project schema
-
-Project schema
+![Project schema](docs/project-schema.png)
 
 ## Run
 
