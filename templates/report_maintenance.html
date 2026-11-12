@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maintenance &amp; Fault History Report – EF101-P11</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; background: #fff; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 24px 28px; }
+
+  /* Header */
+  .report-header { border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
+  .report-title { font-size: 20px; font-weight: 700; color: #111; }
+  .report-meta { font-size: 11px; color: #555; margin-top: 4px; }
+
+  /* Controls */
+  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px;
+         font-size: 12px; font-weight: 600; border-radius: 5px; text-decoration: none;
+         cursor: pointer; border: 1px solid #bbb; background: #f5f5f5; color: #111; }
+  .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .btn:hover { opacity: .85; }
+
+  /* Stats bar */
+  .stats-bar { display: flex; gap: 20px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat-item { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 5px;
+               padding: 8px 14px; text-align: center; min-width: 110px; }
+  .stat-item .n { font-size: 20px; font-weight: 700; line-height: 1.1; }
+  .stat-item .l { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: .4px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { background: #0f766e; color: #fff; padding: 6px 7px; text-align: left;
+       font-weight: 600; white-space: nowrap; }
+  td { padding: 5px 7px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  tfoot td { background: #f0fdf4; border-top: 2px solid #0f766e; font-weight: 600; }
+  .mono { font-family: 'Courier New', Courier, monospace; }
+  .right { text-align: right; }
+  .nw { white-space: nowrap; }
+  .done { color: #16a34a; font-style: italic; }
+
+  /* Status colours */
+  .s-Operational  { color: #16a34a; font-weight: 600; }
+  .s-Faulty        { color: #dc2626; font-weight: 600; }
+  .s-Under-Repair  { color: #ca8a04; font-weight: 600; }
+
+  /* Footer */
+  .report-footer { border-top: 1px solid #ccc; margin-top: 18px; padding-top: 8px;
+                   font-size: 10px; color: #777; display: flex; justify-content: space-between; }
+
+  /* Print */
+  @media print {
+    .controls { display: none !important; }
+    .page { padding: 8px 10px; max-width: 100%; }
+    body { font-size: 10px; }
+    th { background: #0f766e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tfoot td { background: #f0fdf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; }
+    .report-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 4px 10px;
+                     border-top: 1px solid #ccc; background: #fff; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Controls -->
+  <div class="controls">
+    <a class="btn" href="javascript:history.back()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      Back
+    </a>
+    <button class="btn btn-primary" onclick="window.print()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      Print / Save PDF
+    </button>
+  </div>
+
+  <!-- Report header -->
+  <div class="report-header">
+    <div class="report-title">Maintenance &amp; Fault History Report</div>
+    <div class="report-meta">
+      Generated: {{ generated.strftime('%d %b %Y, %H:%M') }} &nbsp;&middot;&nbsp;
+      EF101-P11 Hardware Inventory System &nbsp;&middot;&nbsp; v{{ app_version }}
+    </div>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="n">{{ events | length }}</div>
+      <div class="l">Total events</div>
+    </div>
+    <div class="stat-item">
+      <div class="n">${{ "%.2f"|format(total_cost) }}</div>
+      <div class="l">Total cost</div>
+    </div>
+    {% set unique_assets = events | map(attribute='asset_id') | unique | list %}
+    <div class="stat-item">
+      <div class="n">{{ unique_assets | length }}</div>
+      <div class="l">Assets affected</div>
+    </div>
+  </div>
+
+  <!-- Maintenance table -->
+  {% if events %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Asset ID</th>
+        <th>Model</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Category</th>
+        <th>Fault Description</th>
+        <th>Action Taken</th>
+        <th>Technician</th>
+        <th class="right">Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for e in events %}
+      <tr>
+        <td class="mono" style="color:#aaa">{{ loop.index }}</td>
+        <td class="mono nw">{{ e.event_date }}</td>
+        <td class="mono nw" style="font-weight:600">{{ e.asset_id }}</td>
+        <td class="nw">{{ e.model }}</td>
+        <td class="nw">{{ e.location }}</td>
+        <td class="nw"><span class="s-{{ e.status|replace(' ', '-') }}">{{ e.status }}</span></td>
+        <td class="nw">{{ e.fault_category }}</td>
+        <td>{{ e.fault_description or 'Not recorded' }}</td>
+        <td>{{ e.action_taken or 'Not recorded' }}{% if e.status == 'Operational' %} <span class="done">(Done)</span>{% endif %}</td>
+        <td class="nw">{{ e.technician or 'Not recorded' }}</td>
+        <td class="right mono nw">${{ "%.2f"|format(e.cost_usd) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="10" style="text-align:right;padding-right:10px">Total ({{ events | length }} events):</td>
+        <td class="right mono">${{ "%.2f"|format(total_cost) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+  {% else %}
+  <p style="color:#888;padding:20px 0">No fault events recorded.</p>
+  {% endif %}
+
+  <!-- Footer -->
+  <div class="report-footer">
+    <span>EF101-P11 Hardware Inventory System &middot; v{{ app_version }}</span>
+    <span>Generated: {{ generated.strftime('%d %b %Y, %H:%M') }}</span>
+  </div>
+
+</div>
+</body>
+</html>

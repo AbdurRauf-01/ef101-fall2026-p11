@@ -160,20 +160,23 @@ def reset(assume_yes):
         say(f"Data file: {DB_PATH}")
         if existing and not assume_yes:
             say(f"It holds {existing} assets. Resetting ERASES them and loads the demo data (40 assets).")
-            say("A backup copy of the current data is saved next to it first.")
+            say("A backup copy of the current data is saved in the backups/ folder first.")
             if input("Type YES to continue: ").strip() != "YES":
                 say("Cancelled. Nothing was changed.")
                 return 0
-        backup = DB_PATH.with_name(f"{DB_PATH.stem}.before-reset-{datetime.now():%Y%m%d-%H%M%S}{DB_PATH.suffix}")
+        backups_dir = ROOT / "backups"
+        backups_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup = backups_dir / f"inventory.before-reset-{stamp}.db"
         shutil.copy2(DB_PATH, backup)
     # Same as `python seed.py`, minus its own YES question (already answered above).
     r = subprocess.run([str(VENV_PY), "-c", "import seed; seed.main()"], cwd=str(ROOT))
     if r.returncode != 0:
         if backup:
-            say(f"Seeding failed. Your previous data is still in {backup.name}.")
+            say(f"Seeding failed. Your previous data is still in backups/{backup.name}.")
         return r.returncode
     if backup:
-        say(f"Previous data backed up as {backup.name} (delete it if you do not need it).")
+        say(f"Previous data backed up as backups/{backup.name} (delete it if you do not need it).")
     say("Done. Demo data restored.")
     return 0
 

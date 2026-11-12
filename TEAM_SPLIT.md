@@ -4,6 +4,8 @@ Deadline: Monday 9 Nov 2026. The code is already built and tested (`python test_
 
 **Golden rule:** edit only your own files. That keeps GitHub free of merge conflicts. If you need a change in someone else's file, ask them.
 
+> **v21 update (12 Nov 2026):** Abdur Rauf added printable asset and maintenance reports (`/report/assets`, `/report/maintenance`), fixed the in-app reset to save a backup before wiping, added the *Backup data* button (saves to `backups/` without resetting), and updated the script reset to also put backups in `backups/`. Hassan Majid: the two new report templates (`report_assets.html`, `report_maintenance.html`) are yours to explain — they extend no base.html, use their own CSS, and are designed to be printed.
+
 |  | Irteza Raza<br>(EE-26129): Database | Abdur Rauf<br>(EE-26138): Backend | Hassan Majid<br>(EE-26125): Frontend |
 | --- | --- | --- | --- |
 | Files | `schema.sql`, `db.py`, `queries.py`, `seed.py`, `inventory.db` | `app.py`, `qr_labels.py`, `test_app.py`, `migrate.py`, Scripts, `README` | No code. Reads and explains `templates/` (16 files), `static/style.css`, `docs/` diagram |
@@ -53,10 +55,10 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 - `app.py` contains **no SQL**; it calls `queries.py`.
 - `validate_asset()` checks every field on the server: required values, positive numbers, valid IP, valid dates, purchase date not in the future, warranty not before purchase, duplicate ID rejected.
 - `warranty_status()` computes Active / Expiring soon / Expired from `warranty_expiry`. `parse_date()` and `today()` are helpers.
-- Routes: `/` and `/dashboard`, `/assets`, `/assets/new`, `/api/next-asset-id`, `/api/suggested-ip`, `/api/reset-demo`, `/assets/<id>`, `/assets/<id>/edit`, `/assets/<id>/retire`, `/assets/<id>/reactivate`, `/assets/<id>/maintenance`, `/assets/<id>/fault/edit`, `/steps/<id>/edit|delete`, `/maintenance`, `/maintenance/<id>/edit|delete`, `/export/assets.csv`, `/export/maintenance.csv` and the `/about/...` pages.
+- Routes: `/` and `/dashboard`, `/assets`, `/assets/new`, `/api/next-asset-id`, `/api/suggested-ip`, `/api/reset-demo`, `/api/backup`, `/assets/<id>`, `/assets/<id>/edit`, `/assets/<id>/retire`, `/assets/<id>/reactivate`, `/assets/<id>/maintenance`, `/assets/<id>/fault/edit`, `/steps/<id>/edit|delete`, `/maintenance`, `/maintenance/<id>/edit|delete`, `/export/assets.csv`, `/export/maintenance.csv`, `/report/assets`, `/report/maintenance` and the `/about/...` pages.
 - `csv_response()` builds the CSV download (formula cells are escaped). `guard_requests()` refuses wrong Host headers and cross-site form posts, and `security_headers()` adds the protection headers. Error handlers show friendly pages for 400, 404, 405, 413, 500 and database errors.
 - `asset_edit()` loads the asset, and before showing the edit form turns the database row into a dictionary with blank text for empty values (the fix for the version 1 error described in report section 5).
-- `test_app.py` runs every check (285 in version 20) on a temporary database (your real data is never touched) and prints a results table.
+- `test_app.py` runs every check (291 in version 21) on a temporary database (your real data is never touched) and prints a results table.
 
 **What you must do**
 
@@ -82,7 +84,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 
 **Viva:** all frontend questions (templates, CSS, pages, charts, filters, forms) are Hassan's. He proposed the interface ideas (theme, sidebar, sidebar sections, assets list sorting). Irteza and Abdur built them in version 19 with AI help, and the team checked them. Hassan writes no code.
 
-**Files:** all 16 files in `templates/` (`base`, `assets`, `asset_form`, `asset_detail`, `asset_fault_edit`, `step_edit`, `maintenance`, `maintenance_edit`, `dashboard`, `message`, `about_credits`, `about_privacy`, `about_contact`, `about_schema`, `labels`, `scan`), `static/style.css`, `static/scan.js`, and the diagram in `docs/`
+**Files:** all 18 files in `templates/` (`base`, `assets`, `asset_form`, `asset_detail`, `asset_fault_edit`, `step_edit`, `maintenance`, `maintenance_edit`, `dashboard`, `message`, `about_credits`, `about_privacy`, `about_contact`, `about_schema`, `labels`, `scan`, `report_assets`, `report_maintenance`), `static/style.css`, `static/scan.js`, and the diagram in `docs/`
 
 **What the code does**
 

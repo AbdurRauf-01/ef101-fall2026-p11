@@ -9,6 +9,7 @@ import ipaddress
 import math
 import os
 import re
+import shutil
 import socket
 import sqlite3
 from datetime import date, datetime, timedelta
@@ -24,7 +25,8 @@ from queries import (CURRENT_ERROR_STATUSES, CURRENT_FAULT_FIELDS, FAULT_CATEGOR
                      RAM_TYPES, SORT_COLUMNS, WARRANTY_SOON_DAYS)
 
 app = Flask(__name__)
-APP_VERSION = "20"
+APP_VERSION = "21"
+BACKUPS_DIR = BASE / "backups"
 GITHUB_URL = "https://github.com/AbdurRauf-01/ef101-fall2026-p11"
 # The key only signs the flash messages. A fresh random key per start is fine (messages are one-request only).
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24).hex()
@@ -446,17 +448,44 @@ def api_suggested_ip():
 
 @app.route("/api/reset-demo", methods=["POST"])
 def api_reset_demo():
-    """Reset the database to demo data (same result as python seed.py)."""
+    """Reset the database to demo data (same result as python seed.py).
+    Saves a timestamped backup to backups/ before wiping."""
+    backup_path = None
     try:
+        if DB_PATH.exists() and DB_PATH.stat().st_size > 0:
+            BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            backup_path = BACKUPS_DIR / f"inventory.before-reset-{stamp}.db"
+            shutil.copy2(DB_PATH, backup_path)
         import seed
         seed.main()
-        flash("Inventory reset to demo data (40 assets, 43 maintenance records).", "success")
+        msg = "Inventory reset to demo data (40 assets, 43 maintenance records)."
+        if backup_path:
+            msg += f" Backup saved as backups/{backup_path.name}"
+        flash(msg, "success")
         if request.is_json or request.headers.get("Accept") == "application/json":
-            return {"ok": True, "message": "Inventory reset to demo data."}
+            return {"ok": True, "message": msg}
     except Exception as e:
         flash(f"Failed to reset demo data: {e}", "danger")
         if request.is_json or request.headers.get("Accept") == "application/json":
             return {"ok": False, "error": str(e)}, 500
+    return redirect(request.referrer or url_for("dashboard"))
+
+
+@app.route("/api/backup", methods=["POST"])
+def api_backup():
+    """Save a timestamped backup of the current database to backups/ without resetting anything."""
+    try:
+        if not DB_PATH.exists() or DB_PATH.stat().st_size == 0:
+            flash("No database to back up yet.", "danger")
+            return redirect(request.referrer or url_for("dashboard"))
+        BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup_path = BACKUPS_DIR / f"inventory.backup-{stamp}.db"
+        shutil.copy2(DB_PATH, backup_path)
+        flash(f"Backup saved: backups/{backup_path.name}", "success")
+    except Exception as e:
+        flash(f"Backup failed: {e}", "danger")
     return redirect(request.referrer or url_for("dashboard"))
 
 
@@ -929,6 +958,32 @@ def export_assets():
 def export_maintenance():
     rows = queries.all_events()
     return csv_response(rows[0].keys() if rows else queries.EVENT_FIELDS, rows, "maintenance.csv")
+
+
+# ---- Printable reports ---------------------------------------------------------
+@app.route("/report/assets")
+def report_assets():
+    """Printable asset inventory report (same filters as /assets)."""
+    rows = queries.filtered_assets(request.args)
+    key, direction = current_sort()
+    enriched = [dict(r, warranty=warranty_status(r["warranty_expiry"])) for r in rows]
+    active_filters = {k: v for k, v in request.args.items()
+                      if k not in ("sort", "dir", "first") and v}
+    return render_template("report_assets.html", assets=enriched,
+                           sort=key, direction=direction, f=request.args,
+                           active_filters=active_filters, generated=datetime.now(),
+                           app_version=APP_VERSION)
+
+
+@app.route("/report/maintenance")
+def report_maintenance():
+    """Printable maintenance / fault history report."""
+    key, direction = fault_current_sort()
+    first = fault_current_first()
+    events = queries.fault_history(sort=key, direction=direction, first=first)
+    total_cost = sum(e["cost_usd"] for e in events)
+    return render_template("report_maintenance.html", events=events, total_cost=total_cost,
+                           generated=datetime.now(), app_version=APP_VERSION)
 
 
 @app.errorhandler(404)

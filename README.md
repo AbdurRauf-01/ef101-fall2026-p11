@@ -5,7 +5,8 @@
 
 ## Version history
 
-- **Version 20 and after (from 12 Nov 2026):** see [`CHANGELOG.md`](https://github.com/AbdurRauf-01/ef101-fall2026-p11/blob/main/CHANGELOG.md) in this repository.
+- **Version 21 and after (from 12 Nov 2026):** see [`CHANGELOG.md`](https://github.com/AbdurRauf-01/ef101-fall2026-p11/blob/main/CHANGELOG.md) in this repository.
+- **Version 20 (12 Nov 2026):** see the [`changelogs`](https://github.com/AbdurRauf-01/ef101-fall2026-p11/tree/main/changelogs) directory in this repository (`v20.md`).
 - **Version 19 (9 Nov 2026):** see the [`changelogs`](https://github.com/AbdurRauf-01/ef101-fall2026-p11/tree/main/changelogs) directory in this repository (`v19.md`).
 - **Version 18 and before:** see the [`changelogs`](https://github.com/AbdurRauf-01/ef101-p11/tree/main/changelogs) directory in the legacy repository.
 
@@ -29,13 +30,13 @@ Double-click the file (Linux: if your file manager only opens it in an editor, r
 
 What the launcher does: finds Python 3.8+ (installs it with winget/python.org on Windows, Homebrew/python.org on macOS, dnf on Fedora, apt on Ubuntu), creates `venv/`, installs `requirements.txt` into it, then starts `app.py`. Later launches skip every step that is already done. `venv/` can be deleted at any time; it is rebuilt automatically. Manual run: see "Manual run (no launcher)" below.
 
-**Reset to demo data** asks you to type YES, saves the current data as `inventory.before-reset-<date>.db`, then does the same as `python seed.py`. The app prints its address (http://127.0.0.1:5000, or the next free port if 5000 is busy) and the location of its data file.
+**Reset to demo data** asks you to type YES, saves the current data as `backups/inventory.before-reset-<date>.db` (inside the project folder), then does the same as `python seed.py`. The app prints its address (http://127.0.0.1:5000, or the next free port if 5000 is busy) and the location of its data file.
 
 - **Your data is kept in this folder**, in `inventory.db`. Launching never deletes it. To move the project, move the whole folder, data included.
 - **First launch:** an empty database is created with the six standard places. Add assets from the app.
 - **Demo data (optional):** `python seed.py` replaces the data with 40 demo assets. It asks you to type YES first when there is data.
 - **Several copies at once:** each copy has its own data file and its own address, so you can run an older version (for example v7) next to this one to compare.
-- **Tests:** `python test_app.py` runs every check (285 in version 20) on a temporary database and prints a results table.
+- **Tests:** `python test_app.py` runs every check (285 in version 21) on a temporary database and prints a results table.
 
 ## Manual run (no launcher)
 
@@ -119,7 +120,7 @@ Linux notes:
 - `The virtual environment was not created successfully` or `ensurepip is not available` on Ubuntu: `python3-venv` is missing; run the Ubuntu command in step A, delete the half-made folder with `rm -rf venv`, and repeat step C.
 - `error: externally-managed-environment` when running pip: you are outside the venv. Run `source venv/bin/activate` first; do not use `--break-system-packages`.
 - `command not found: git`: install it as in step A, or use the ZIP download instead.
-- Optional: `python seed.py` resets the data to the demo data (type YES), and `python test_app.py` runs the 285 checks.
+- Optional: `python seed.py` resets the data to the demo data (type YES), and `python test_app.py` runs the 291 checks.
 - If a double-click launcher does not run, give it permission once: `chmod +x start.sh reset-demo-data.sh scripts/*.sh`, then `./start.sh`. This manual route does not need it.
 
 ## Files
@@ -128,16 +129,19 @@ Linux notes:
 | --- | --- |
 | `start.*`, `reset-demo-data.*`, `scripts/` | Launchers per OS: dependency check/install, venv, start, demo reset |
 | `requirements.txt` | Python packages (Flask, segno) |
-| `app.py` | Backend: routes, input validation, CSV export (no SQL) |
+| `app.py` | Backend: routes, input validation, CSV export, printable reports, backup (no SQL) |
 | `qr_labels.py` | The spec text stored in a label, the QR code itself (SVG, made with segno) and the rule that turns a scanned text into an asset ID |
 | `queries.py` | Database layer: every SQL statement (filters, saves, dashboard figures) |
 | `db.py` | SQLite connection + schema creation |
 | `schema.sql` | The four tables: `locations`, `assets`, `fault_steps` (steps of an open fault) and `maintenance` (history) |
 | `seed.py` | Demo data generator (fixed random seed, reproducible) |
 | `migrate.py` | Upgrades an older `inventory.db` to the current version without losing data (backup kept, safe to run twice) |
-| `CHANGELOG.md` | What changed in version 20 (older versions: the `changelogs/` folder on GitHub) |
+| `CHANGELOG.md` | What changed in version 21 (older versions: the `changelogs/` folder on GitHub) |
 | `test_app.py` | Test evidence (add, edit, retire, invalid input, duplicates, filters, history, dashboard, export) |
 | `templates/`, `static/` | HTML (Jinja) pages and the stylesheet; `static/scan.js` is the Scan page script and `static/vendor/jsQR.js` the bundled QR reader (Apache-2.0, licence beside it) |
+| `templates/report_assets.html` | Standalone printable asset inventory report (no base.html, `@media print` CSS) |
+| `templates/report_maintenance.html` | Standalone printable maintenance/fault history report |
+| `backups/` | Timestamped database backups — created automatically on reset or when *Backup data* is clicked |
 
 ## Upgrading an existing database
 
@@ -172,6 +176,8 @@ Run `python migrate.py` once (or `python migrate.py path/to/inventory.db`). It k
 - **Local-only protections**: the app answers only to `127.0.0.1` / `localhost` (set `INVENTORY_ALLOWED_HOSTS` to add a name), refuses form posts sent from another website, and sends a Content-Security-Policy so the browser loads nothing from the internet. Debug mode is off; start with `FLASK_DEBUG=1` only when developing.
 - **QR labels and scanning** (bonus, version 20): every asset has a QR code holding a short plain-text block of its specs (asset ID, model, CPU, RAM, storage, GPU, OS, IP, location, warranty expiry) and its status with an *as of* date. Any phone camera shows that text with no network, so the specs can be read even though the app runs only on this computer. The text is a snapshot: after a spec or status change the label must be printed again (the printed date shows its age); the asset page in the app is always current. Fault details and costs are never put on a label. The asset page shows the code with *Print label* and *Download SVG*; *QR Labels* in the sidebar (or the *QR labels* button on the Assets list, which keeps the current search and filters) opens a printable sheet of labels (QR, ID, model, place, warranty, printed date). The *Scan QR* page reads a label with the camera, from an uploaded photo, or from the text box (a USB barcode scanner types into it), asks the app which asset the text means (`/api/scan-lookup`; the spec block, an older link, `EF101-ASSET:<ID>` or a bare ID are all understood, upper/lower case ignored) and opens it. Reading happens in the browser, nothing is sent anywhere else. The camera needs `http://127.0.0.1` or `localhost`. The app answers only to 127.0.0.1 and localhost unless `INVENTORY_ALLOWED_HOSTS` is set, so a phone cannot open the app itself; it reads the specs from the code instead. If `segno` is missing the label pages show an install hint and every other page still works.
 - **Exports**: CSV cells that start with `=` `+` `-` `@` get a leading apostrophe so Excel/Calc cannot run them as formulas; files carry a UTF-8 byte-order mark so accents open correctly.
+- **Printable reports** (version 21): `/report/assets` and `/report/maintenance` serve standalone HTML pages with `@media print` CSS. They follow the same filters and sort as the main list pages. The *Print / Save PDF* browser button renders the report; there is no server-side PDF. Linked from the sidebar and from *Print Report* buttons on the Assets and Fault History pages.
+- **Backup** (version 21): The *Backup data* button in the sidebar saves a timestamped copy of `inventory.db` to the `backups/` folder without resetting anything. The *Reset to demo data* sidebar button and the `reset-demo-data.*` scripts also save a backup to `backups/` before wiping. Backups are plain SQLite files and can be restored by renaming one back to `inventory.db`.
 - **Old databases**: starting the app on an `inventory.db` from an older version stops with a message to run `python migrate.py`.
 - All SQL uses `?` placeholders (no string-built values), so search input cannot inject SQL.
 
@@ -179,7 +185,7 @@ Run `python migrate.py` once (or `python migrate.py path/to/inventory.db`). It k
 
 **Software:** Python, Flask, SQLite (built-in `sqlite3`), Jinja templates and plain CSS. The QR codes are drawn by the Python package `segno` (BSD) and read in the browser by `jsQR` (Apache-2.0, one file bundled in `static/vendor/`, so nothing is loaded from the Internet at run time; `segno` is installed from the Python package index with the other requirements). No font, script or image is loaded from the Internet. No external data or assets are used; the demo data is generated by `seed.py`.
 
-**AI:** Claude (Anthropic) was used to draft the application code, the demo-data script, the test script and the report skeleton. Later versions (up to version 20) were improved and fixed using several Claude accounts. Version 19 (9 Nov 2026) changed the interface styling, sidebar counts and the Credits, Privacy, Contact and Schema text, and added the IP suggestion and two helper routes; built by Irteza Raza and Abdur Rauf with Claude from Hassan Majid's interface ideas, and listed in `CHANGELOG.md`. Version 20 (12 Nov 2026) added the QR label and scanner bonus feature and moved the repository to `AbdurRauf-01/ef101-fall2026-p11`; built by Abdur Rauf with Claude. A final review on 8 Nov 2026, also with Claude, found and fixed further errors. Every member reviewed, tested and can explain the project.
+**AI:** Claude (Anthropic) was used to draft the application code, the demo-data script, the test script and the report skeleton. Later versions (up to version 21) were improved and fixed using several Claude accounts. Version 19 (9 Nov 2026) changed the interface styling, sidebar counts and the Credits, Privacy, Contact and Schema text, and added the IP suggestion and two helper routes; built by Irteza Raza and Abdur Rauf with Claude from Hassan Majid's interface ideas, and listed in `CHANGELOG.md`. Version 20 (12 Nov 2026) added the QR label and scanner bonus feature and moved the repository to `AbdurRauf-01/ef101-fall2026-p11`; built by Abdur Rauf with Claude. Version 21 (12 Nov 2026) added printable asset and maintenance reports, an in-app backup button, and fixed the backup system so both in-app and script resets save backups to `backups/`; built by Abdur Rauf with Claude. A final review on 8 Nov 2026, also with Claude, found and fixed further errors. Every member reviewed, tested and can explain the project.
 
 **Who did what** (same as report section 9):
 

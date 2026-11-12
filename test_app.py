@@ -1257,6 +1257,35 @@ check("Without the QR package: asset page still opens", "segno missing, GET asse
       r.status_code == 200 and b'class="qr-card"' not in r.data)
 qr_labels.segno = _seg
 
+# ---- Version 21 tests: reports and backups ----
+rep_a = client.get("/report/assets")
+check("Printable asset report", "GET /report/assets", "200, contains report title and asset table",
+      rep_a.status_code == 200 and "Asset Inventory Report" in rep_a.get_data(as_text=True)
+      and "table" in rep_a.get_data(as_text=True))
+
+rep_a_filt = client.get("/report/assets?location=Lab+1")
+check("Printable asset report with filter", "GET /report/assets?location=Lab 1", "200, filters applied summary",
+      rep_a_filt.status_code == 200 and "Lab 1" in rep_a_filt.get_data(as_text=True))
+
+rep_m = client.get("/report/maintenance")
+check("Printable maintenance report", "GET /report/maintenance", "200, contains report title and events table",
+      rep_m.status_code == 200 and "Maintenance & Fault History Report" in rep_m.get_data(as_text=True)
+      and "table" in rep_m.get_data(as_text=True))
+
+# Test in-app backup route
+bk_res = client.post("/api/backup", follow_redirects=True)
+check("In-app backup", "POST /api/backup", "creates backup file in backups/ and flashes filename",
+      bk_res.status_code == 200 and "Backup saved: backups/" in bk_res.get_data(as_text=True))
+
+# Test in-app reset creates backup before wiping
+reset_res = client.post("/api/reset-demo", follow_redirects=True)
+check("In-app reset saves backup", "POST /api/reset-demo", "creates before-reset backup in backups/",
+      reset_res.status_code == 200 and "Backup saved as backups/" in reset_res.get_data(as_text=True))
+
+dash = client.get("/dashboard").get_data(as_text=True)
+check("Sidebar v21 links and buttons", "GET /dashboard", "Asset Report, Maintenance Report, Backup data button",
+      "Asset Report" in dash and "Maintenance Report" in dash and "Backup data" in dash)
+
 # ---- report ----
 w = [max(len(str(r[i])) for r in results + [("Test", "Input", "Expected", "Result")]) for i in range(4)]
 line = lambda r: " | ".join(str(x).ljust(w[i]) for i, x in enumerate(r))

@@ -132,6 +132,27 @@
         </span>
       </a>
 
+      <a class="{{ 'on' if ep == 'report_assets' }}" href="{{ url_for('report_assets') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          Asset Report
+        </span>
+      </a>
+      <a class="{{ 'on' if ep == 'report_maintenance' }}" href="{{ url_for('report_maintenance') }}">
+        <span class="link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          Maintenance Report
+        </span>
+      </a>
+
       <div class="group">About &amp; Docs</div>
       <a class="{{ 'on' if ep == 'about_schema' }}" href="{{ url_for('about_schema') }}">
         <span class="link-left">
@@ -189,8 +210,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <button class="btn sec" id="theme-toggle" type="button" style="justify-content:space-between">
-        <span class="row" style="gap:8px" id="theme-icon-label">
+      <button class="btn sec" id="theme-toggle" type="button" style="justify-content:space-between">        <span class="row" style="gap:8px" id="theme-icon-label">
           <svg id="theme-sun-icon" style="width:14px;height:14px;display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
           <svg id="theme-moon-icon" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
           <span id="theme-text">Dark mode</span>
@@ -198,7 +218,14 @@
         <span class="muted" id="theme-hint" style="font-size:10px">Light</span>
       </button>
 
-      <form method="post" action="{{ url_for('api_reset_demo') }}" onsubmit="return confirm('Reset all inventory data back to the demo state (40 demo assets and 43 maintenance records)? Current changes will be overwritten.')">
+      <form method="post" action="{{ url_for('api_backup') }}" style="margin-bottom:4px">
+        <button type="submit" class="btn sec" style="width:100%;font-size:11px;color:var(--muted);border:none;background:transparent;box-shadow:none">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Backup data
+        </button>
+      </form>
+
+      <form method="post" action="{{ url_for('api_reset_demo') }}" onsubmit="return confirm('Reset all inventory data back to the demo state (40 demo assets and 43 maintenance records)? A backup will be saved to backups/ first.')">
         <button type="submit" class="btn sec" style="width:100%;font-size:11px;color:var(--muted);border:none;background:transparent;box-shadow:none">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
           Reset to demo data
@@ -265,6 +292,14 @@
           <a class="crumb-link" href="{{ url_for('dashboard') }}">Project Info</a>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
           <span class="crumb-active">Contact</span>
+        {% elif ep == 'report_assets' %}
+          <a class="crumb-link" href="{{ url_for('assets') }}">Inventory</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Asset Report</span>
+        {% elif ep == 'report_maintenance' %}
+          <a class="crumb-link" href="{{ url_for('maintenance') }}">Maintenance</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="crumb-active">Maintenance Report</span>
         {% else %}
           <span class="crumb-active">Hardware Inventory</span>
         {% endif %}
