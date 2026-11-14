@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# macOS / Fedora / Ubuntu bootstrap. Usage: bootstrap.sh start|reset
+# macOS / Fedora / Ubuntu bootstrap. Usage: bootstrap.sh start|reset|test
 # Makes sure a usable Python 3.8+ (with venv + pip) exists - installing it if not - then hands over to launcher.py.
 set -u
 

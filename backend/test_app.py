@@ -1,4 +1,4 @@
-"""Automated test evidence for EF101-P11. Run: python test_app.py
+"""Automated test evidence for EF101-P11. Run: python backend/test_app.py
 Uses a temporary database (your inventory.db is never touched) and prints a
 Test | Input | Expected | Result table you can paste into the report."""
 import csv
@@ -10,6 +10,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR / "database"))   # db.py, queries.py, seed.py, migrate.py live in database/
+
 import db
 
 TMP = Path(tempfile.mkdtemp()) / "test.db"
@@ -17,7 +20,7 @@ db.DB_PATH = TMP                       # redirect everything to a throwaway data
 import seed                            # noqa: E402
 import queries                         # noqa: E402
 import app as appmod                   # noqa: E402
-appmod.BACKUPS_DIR = TMP.parent / "backups"   # test backups go to a temp folder, not the project's backups/
+appmod.BACKUPS_DIR = TMP.parent / "backups"   # test backups go to a temp folder, not the project's database/backups/
 
 seed.main()
 client = appmod.app.test_client()
@@ -873,7 +876,7 @@ check("Step edit page has no cost; edit and delete keep the total", "edit step, 
       and count("SELECT COUNT(*) FROM fault_steps WHERE asset_id='NOSTEP-1'") == 2)
 
 # migrate.py on copies of an old database
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = ROOT_DIR / "database"                   # schema.sql, migrate.py and the shipped inventory.db
 OLD_STEPS = ("DROP TABLE fault_steps; CREATE TABLE fault_steps (id INTEGER PRIMARY KEY AUTOINCREMENT, "
              "asset_id TEXT NOT NULL REFERENCES assets(asset_id), step_date TEXT NOT NULL, action TEXT NOT NULL, "
              "technician TEXT NOT NULL, cost_usd REAL NOT NULL DEFAULT 0);")
@@ -1075,8 +1078,8 @@ import qr_labels                      # noqa: E402
 
 QA = "L1-PC-004"                       # an active demo asset
 active_ids = [r["asset_id"] for r in queries.filtered_assets({})]
-check("Version number", "appmod.APP_VERSION and the sidebar", "21, shown as v21",
-      appmod.APP_VERSION == "21" and "v21" in client.get("/dashboard").get_data(as_text=True))
+check("Version number", "appmod.APP_VERSION and the sidebar", "22, shown as v22",
+      appmod.APP_VERSION == "22" and "v22" in client.get("/dashboard").get_data(as_text=True))
 check("GitHub link constant", "appmod.GITHUB_URL", "AbdurRauf-01/ef101-fall2026-p11",
       appmod.GITHUB_URL == "https://github.com/AbdurRauf-01/ef101-fall2026-p11")
 
@@ -1275,13 +1278,13 @@ check("Printable maintenance report", "GET /report/maintenance", "200, contains 
 
 # Test in-app backup route
 bk_res = client.post("/api/backup", follow_redirects=True)
-check("In-app backup", "POST /api/backup", "creates backup file in backups/ and flashes filename",
-      bk_res.status_code == 200 and "Backup saved: backups/" in bk_res.get_data(as_text=True))
+check("In-app backup", "POST /api/backup", "creates backup file in database/backups/ and flashes filename",
+      bk_res.status_code == 200 and "Backup saved: database/backups/" in bk_res.get_data(as_text=True))
 
 # Test in-app reset creates backup before wiping
 reset_res = client.post("/api/reset-demo", follow_redirects=True)
-check("In-app reset saves backup", "POST /api/reset-demo", "creates before-reset backup in backups/",
-      reset_res.status_code == 200 and "Backup saved as backups/" in reset_res.get_data(as_text=True))
+check("In-app reset saves backup", "POST /api/reset-demo", "creates before-reset backup in database/backups/",
+      reset_res.status_code == 200 and "Backup saved as database/backups/" in reset_res.get_data(as_text=True))
 check("In-app reset reports the real counts", "POST /api/reset-demo", "(40 assets, 43 maintenance records)",
       "(40 assets, 43 maintenance records)" in reset_res.get_data(as_text=True))
 again = [seed.main(), seed.main()]

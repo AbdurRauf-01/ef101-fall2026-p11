@@ -1,4 +1,4 @@
-"""Generate DEMO data (not real assets). Run: python seed.py
+"""Generate DEMO data (not real assets). Run: python database/seed.py
 Re-running wipes and recreates inventory.db. Uses a fixed random seed so
 results are reproducible. Faults are deliberately concentrated on a few
 assets and categories so the 'most frequently failing' result is meaningful.

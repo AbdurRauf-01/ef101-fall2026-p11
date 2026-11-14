@@ -1,0 +1,4 @@
+# Extra packages used only by test_app.py (the QR decode check). Optional: without them that one test is skipped.
+# run-tests.* offers to install these for you.
+numpy
+zxing-cpp

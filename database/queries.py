@@ -422,7 +422,7 @@ def fault_history(limit=None, sort="date", direction="desc", first=None):
 
     if sort == "status":
         first_st = first if first in ("Operational", "Under Repair", "Faulty") else "Operational"
-        order_sql = f"(CASE WHEN a.status=? THEN 0 ELSE 1 END), a.status, a.asset_id ASC, m.event_date DESC"
+        order_sql = "(CASE WHEN a.status=? THEN 0 ELSE 1 END), a.status, a.asset_id ASC, m.event_date DESC"
         params = [first_st]
     else:
         col = FAULT_SORT_COLUMNS.get(sort, FAULT_SORT_COLUMNS["date"])

@@ -1,5 +1,5 @@
 /* Scan page (version 20). Reads QR codes from the camera or an uploaded photo.
-   Uses the browser's built-in BarcodeDetector when it exists, otherwise the bundled jsQR (static/vendor/jsQR.js).
+   Uses the browser's built-in BarcodeDetector when it exists, otherwise the bundled jsQR (frontend/static/vendor/jsQR.js).
    Everything runs in the browser; the only request made is to this app's /api/scan-lookup. */
 (function () {
   'use strict';

@@ -1,5 +1,5 @@
 @echo off
-REM Windows bootstrap. Usage: bootstrap.bat start|reset
+REM Windows bootstrap. Usage: bootstrap.bat start|reset|test
 REM Makes sure Python 3.8+ exists (installing it per-user if not), then hands over to launcher.py.
 setlocal
 set "ACTION=%~1"

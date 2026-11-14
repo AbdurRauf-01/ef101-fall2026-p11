@@ -1,5 +1,5 @@
 """Upgrade an existing inventory.db to the current version WITHOUT losing data.
-Run once from the project folder:   python migrate.py        (or: python migrate.py path/to/inventory.db)
+Run once from the project folder:   python database/migrate.py        (or: python database/migrate.py path/to/inventory.db)
 A backup is written first to inventory.db.bak. The original is only replaced when everything succeeded
 and the new database has been checked (row counts, integrity, foreign keys).
 Running it again on an up-to-date database does nothing (and does not touch the backup).
@@ -57,7 +57,7 @@ def columns(conn, table):
 def main(db_path=None):
     DB = Path(db_path) if db_path else DEFAULT_DB
     if not DB.exists():
-        print(f"{DB.name} not found - nothing to migrate (run python seed.py for demo data).")
+        print(f"{DB.name} not found - nothing to migrate (run python database/seed.py for demo data).")
         return
     old = sqlite3.connect(DB)
     old.row_factory = sqlite3.Row

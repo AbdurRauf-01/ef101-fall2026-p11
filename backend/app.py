@@ -1,6 +1,6 @@
 """EF101-P11 Computer Hardware Inventory and Maintenance System.
-Run: python app.py   (or double-click start.command / start.bat). Data is kept in inventory.db in this folder.
-Optional demo data: python seed.py
+Run: python backend/app.py   (or double-click start.command / start.bat). Data is kept in database/inventory.db.
+Optional demo data: python database/seed.py
 """
 import argparse
 import csv
@@ -12,11 +12,17 @@ import re
 import shutil
 import socket
 import sqlite3
+import sys
 from datetime import date, datetime, timedelta
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from flask import (Flask, Response, flash, redirect, render_template, request,
                    send_from_directory, url_for)
+
+ROOT = Path(__file__).resolve().parent.parent          # the project folder
+FRONTEND = ROOT / "frontend"                           # templates/ and static/
+sys.path.insert(0, str(ROOT / "database"))             # db.py, queries.py, seed.py live in database/
 
 import qr_labels
 import queries
@@ -24,9 +30,9 @@ from db import BASE, DB_PATH, ensure_database, schema_problem
 from queries import (CURRENT_ERROR_STATUSES, CURRENT_FAULT_FIELDS, FAULT_CATEGORIES, FIELDS,
                      RAM_TYPES, SORT_COLUMNS, WARRANTY_SOON_DAYS)
 
-app = Flask(__name__)
-APP_VERSION = "21"
-BACKUPS_DIR = BASE / "backups"
+app = Flask(__name__, template_folder=str(FRONTEND / "templates"), static_folder=str(FRONTEND / "static"))
+APP_VERSION = "22"
+BACKUPS_DIR = BASE / "backups"                       # database/backups/
 GITHUB_URL = "https://github.com/AbdurRauf-01/ef101-fall2026-p11"
 # The key only signs the flash messages. A fresh random key per start is fine (messages are one-request only).
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24).hex()
@@ -448,8 +454,8 @@ def api_suggested_ip():
 
 @app.route("/api/reset-demo", methods=["POST"])
 def api_reset_demo():
-    """Reset the database to demo data (same result as python seed.py).
-    Saves a timestamped backup to backups/ before wiping."""
+    """Reset the database to demo data (same result as python database/seed.py).
+    Saves a timestamped backup to database/backups/ before wiping."""
     backup_path = None
     try:
         if DB_PATH.exists() and DB_PATH.stat().st_size > 0:
@@ -461,7 +467,7 @@ def api_reset_demo():
         n_assets, n_events = seed.main()
         msg = f"Inventory reset to demo data ({n_assets} assets, {n_events} maintenance records)."
         if backup_path:
-            msg += f" Backup saved as backups/{backup_path.name}"
+            msg += f" Backup saved as database/backups/{backup_path.name}"
         flash(msg, "success")
         if request.is_json or request.headers.get("Accept") == "application/json":
             return {"ok": True, "message": msg}
@@ -474,7 +480,7 @@ def api_reset_demo():
 
 @app.route("/api/backup", methods=["POST"])
 def api_backup():
-    """Save a timestamped backup of the current database to backups/ without resetting anything."""
+    """Save a timestamped backup of the current database to database/backups/ without resetting anything."""
     try:
         if not DB_PATH.exists() or DB_PATH.stat().st_size == 0:
             flash("No database to back up yet.", "danger")
@@ -483,7 +489,7 @@ def api_backup():
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         backup_path = BACKUPS_DIR / f"inventory.backup-{stamp}.db"
         shutil.copy2(DB_PATH, backup_path)
-        flash(f"Backup saved: backups/{backup_path.name}", "success")
+        flash(f"Backup saved: database/backups/{backup_path.name}", "success")
     except Exception as e:
         flash(f"Backup failed: {e}", "danger")
     return redirect(request.referrer or url_for("dashboard"))
@@ -917,7 +923,7 @@ def about_schema():
 @app.route("/about/schema.svg")
 def schema_image():
     download = request.args.get("download") == "1"
-    return send_from_directory(str(BASE / "docs"), "project-schema.svg", as_attachment=download)
+    return send_from_directory(str(ROOT / "docs"), "project-schema.svg", as_attachment=download)
 
 
 @app.route("/github")
@@ -1016,7 +1022,7 @@ def server_error(e):
 @app.errorhandler(sqlite3.OperationalError)
 def db_missing(e):
     return render_template("message.html", title="Database problem",
-                           text=f"{e}. If inventory.db is missing, run: python seed.py"), 500
+                           text=f"{e}. If inventory.db is missing, run: python database/seed.py"), 500
 
 
 def free_port(start=5000, tries=100):
@@ -1038,14 +1044,14 @@ if __name__ == "__main__":
     created = ensure_database()           # first launch only: an empty database; existing data is kept
     problem = schema_problem()
     if problem:                           # an old copy of inventory.db: say what to do instead of failing later
-        raise SystemExit(f"\n{problem}\nUpgrade it without losing data:  python migrate.py\n"
-                         "(or start fresh with demo data:  python seed.py)")
+        raise SystemExit(f"\n{problem}\nUpgrade it without losing data:  python database/migrate.py\n"
+                         "(or start fresh with demo data:  python database/seed.py)")
     port = args.port or int(os.environ.get("PORT", 0)) or free_port()
     print("Hardware Inventory")
     print(f"  Open in your browser:  http://127.0.0.1:{port}")
     print(f"  Data file:             {DB_PATH}")
     if created:
-        print("  A new, empty database was created. Add assets, or run 'python seed.py' for demo data.")
+        print("  A new, empty database was created. Add assets, or run 'python database/seed.py' for demo data.")
     print("  Press Ctrl+C to stop.")
     # debug mode (browser console that can run code) is off unless you ask for it: set FLASK_DEBUG=1
     app.run(host="127.0.0.1", port=port, debug=os.environ.get("FLASK_DEBUG") == "1", use_reloader=False)
