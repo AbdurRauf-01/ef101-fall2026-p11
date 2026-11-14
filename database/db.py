@@ -39,13 +39,23 @@ def ensure_database():
     Existing data is never touched. Returns True when a new database was created."""
     if has_tables():
         return False
+    _create_empty()
+    return True
+
+
+def _create_empty():
     conn = sqlite3.connect(DB_PATH)
     conn.executescript((BASE / "schema.sql").read_text(encoding="utf-8"))
     conn.executemany("INSERT INTO locations (name,prefix,ip_subnet) VALUES (?,?,?)",
                      [(name, prefix, i + 1) for i, (name, prefix) in enumerate(DEFAULT_PLACES.items())])
     conn.commit()
     conn.close()
-    return True
+
+
+def empty_database():
+    """Delete ALL data (assets, history, steps, places) and start again with the six standard places.
+    Used by the reset launcher (option 2, after it saved a backup)."""
+    _create_empty()
 
 
 def schema_problem():

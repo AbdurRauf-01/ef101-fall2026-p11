@@ -62,12 +62,15 @@
 
       <div>
         <label for="f-cpu">CPU (full model) *</label>
-        <input name="cpu" value="{{ a.get('cpu','') }}" placeholder="Intel Core i5-12400" id="f-cpu">
+        <input name="cpu" value="{{ a.get('cpu','') }}" placeholder="Start typing: Intel Core i5-12400" id="f-cpu" list="cpu-models" autocomplete="off" data-url="{{ url_for('api_cpu_family') }}">
+        <datalist id="cpu-models">{% for m in cpu_models %}<option value="{{ m }}">{% endfor %}</datalist>
       </div>
 
       <div>
         <label for="f-cpu_family">CPU family *</label>
-        <input name="cpu_family" value="{{ a.get('cpu_family','') }}" placeholder="Core i5, Core i7, Ryzen 5..." id="f-cpu_family">
+        <input name="cpu_family" value="{{ a.get('cpu_family','') }}" placeholder="Filled from the CPU, or pick: Core i5, Ryzen 5..." id="f-cpu_family" list="cpu-families" autocomplete="off">
+        <datalist id="cpu-families">{% for f in cpu_families %}<option value="{{ f }}">{% endfor %}</datalist>
+        <div id="cpu-hint" class="muted" style="font-size:12px;margin-top:4px;min-height:16px"></div>
       </div>
 
       <div>
@@ -425,4 +428,6 @@
   sync();
 })();
 </script>
+<script src="{{ url_for('static', filename='combobox.js') }}"></script>
+<script src="{{ url_for('static', filename='cpu-fields.js') }}"></script>
 {% endblock %}

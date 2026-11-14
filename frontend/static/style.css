@@ -1036,3 +1036,56 @@ dd {
 }
 
 [hidden] { display: none !important; }
+
+
+/* Reset data dialog (sidebar) */
+.reset-dialog {
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 20px 22px;
+  width: min(460px, calc(100vw - 32px));
+  box-shadow: var(--shadow-md);
+}
+.reset-dialog::backdrop { background: rgba(2, 6, 23, 0.55); }
+.reset-dialog h2 { font-size: 1rem; margin: 0 0 6px; }
+.reset-dialog p { font-size: 0.8125rem; margin: 0 0 12px; }
+.reset-opt {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 12px; margin: 0 0 8px;
+  border: 1px solid var(--input-border); border-radius: 8px;
+  font-weight: 400; font-size: 0.8125rem; cursor: pointer;
+}
+.reset-opt:hover { background: var(--hover); }
+.reset-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-light); }
+.reset-opt input { width: auto; margin-top: 3px; }
+.reset-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.reset-actions .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+
+/* Type-to-filter drop-down (CPU and CPU family): looks like the other drop-downs */
+.combo { position: relative; }
+.combo > input { padding-right: 32px; }
+.combo-btn {
+  position: absolute; top: 0; right: 0; height: 100%; width: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 0;
+}
+.combo-btn:hover { color: var(--ink); }
+.combo-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 50;
+  margin: 0; padding: 4px; list-style: none;
+  max-height: 252px; overflow-y: auto;
+  background: var(--card); border: 1px solid var(--input-border); border-radius: 8px;
+  box-shadow: var(--shadow-md);
+}
+.combo-list[hidden] { display: none; }
+.combo-list li {
+  padding: 6px 10px; border-radius: 6px;
+  font-size: 0.8125rem; color: var(--ink); cursor: pointer;
+}
+.combo-list li b { font-weight: 700; color: var(--accent-ink); }
+.combo-list li.combo-on { background: var(--accent-light); color: var(--accent-ink); }
+.combo-list li.combo-current { font-weight: 600; }
+.combo-list li.combo-empty { color: var(--muted); cursor: default; }

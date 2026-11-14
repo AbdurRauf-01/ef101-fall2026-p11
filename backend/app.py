@@ -24,14 +24,15 @@ ROOT = Path(__file__).resolve().parent.parent          # the project folder
 FRONTEND = ROOT / "frontend"                           # templates/ and static/
 sys.path.insert(0, str(ROOT / "database"))             # db.py, queries.py, seed.py live in database/
 
+import cpu_catalog
 import qr_labels
 import queries
-from db import BASE, DB_PATH, ensure_database, schema_problem
+from db import BASE, DB_PATH, ensure_database, get_db, schema_problem
 from queries import (CURRENT_ERROR_STATUSES, CURRENT_FAULT_FIELDS, FAULT_CATEGORIES, FIELDS,
                      RAM_TYPES, SORT_COLUMNS, WARRANTY_SOON_DAYS)
 
 app = Flask(__name__, template_folder=str(FRONTEND / "templates"), static_folder=str(FRONTEND / "static"))
-APP_VERSION = "22"
+APP_VERSION = "23"
 BACKUPS_DIR = BASE / "backups"                       # database/backups/
 GITHUB_URL = "https://github.com/AbdurRauf-01/ef101-fall2026-p11"
 # The key only signs the flash messages. A fresh random key per start is fine (messages are one-request only).
@@ -332,6 +333,10 @@ def validate_asset(f, is_new, subnet, prev=None):
     for k in ["manufacturer", "model", "cpu", "cpu_family", "os", "location"]:
         if not c[k]:
             errors.append(f"{FIELD_LABELS[k]} is required.")
+    if c["cpu"] and c["cpu_family"]:                    # the CPU must belong to the family (backend/cpu_catalog.py)
+        c["cpu_family"], family_error = cpu_catalog.check_cpu_family(c["cpu"], c["cpu_family"])
+        if family_error:
+            errors.append(family_error)
     if not c["asset_id"]:
         errors.append("Choose a location so the asset ID can be assigned automatically, or type an ID.")
     elif is_new and not ASSET_ID_RE.match(c["asset_id"]):
@@ -424,6 +429,18 @@ def assets():
                            sort=key, direction=direction, first=current_first(), columns=ASSET_COLUMNS)
 
 
+@app.context_processor
+def inject_cpu_lists():
+    """The CPU and family suggestions for the Add / Edit form (typing filters the list; any CPU may still be typed)."""
+    return {"cpu_models": cpu_catalog.CPU_MODELS, "cpu_families": cpu_catalog.FAMILIES}
+
+
+@app.route("/api/cpu-family")
+def api_cpu_family():
+    """Family of a CPU name, so the form can fill the family box and warn about a mismatch. None = not recognised."""
+    return {"family": cpu_catalog.family_for_cpu(request.args.get("cpu", "")), "other": cpu_catalog.OTHER}
+
+
 @app.route("/api/next-asset-id")
 def api_next_asset_id():
     loc = (request.args.get("location") or "").strip()
@@ -452,30 +469,73 @@ def api_suggested_ip():
     return {"ip": ip or ""}
 
 
-@app.route("/api/reset-demo", methods=["POST"])
-def api_reset_demo():
-    """Reset the database to demo data (same result as python database/seed.py).
-    Saves a timestamped backup to database/backups/ before wiping."""
-    backup_path = None
+def _backup_before(label):
+    """Copy the database to database/backups/ before it is changed. Returns the backup path (None when there is no data file)."""
+    if DB_PATH.exists() and DB_PATH.stat().st_size > 0:
+        BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+        path = BACKUPS_DIR / f"inventory.before-{label}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.db"
+        shutil.copy2(DB_PATH, path)
+        return path
+    return None
+
+
+def _wants_json():
+    return request.is_json or request.headers.get("Accept") == "application/json"
+
+
+def _reset(mode, confirm_text):
+    """Shared by the Reset data dialog and the old /api/reset-demo address.
+    mode "demo": 40 demo assets (same as python database/seed.py). mode "empty": delete all data, keep the six
+    standard places. confirm_text None skips the YES question (old address); otherwise YES is needed when assets exist."""
+    if mode not in ("demo", "empty"):
+        flash("Nothing was changed: choose Reset to demo data or Delete all data.", "danger")
+        return redirect(request.referrer or url_for("dashboard"))
+    conn = get_db()
     try:
-        if DB_PATH.exists() and DB_PATH.stat().st_size > 0:
-            BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
-            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-            backup_path = BACKUPS_DIR / f"inventory.before-reset-{stamp}.db"
-            shutil.copy2(DB_PATH, backup_path)
-        import seed
-        n_assets, n_events = seed.main()
-        msg = f"Inventory reset to demo data ({n_assets} assets, {n_events} maintenance records)."
+        existing = conn.execute("SELECT COUNT(*) FROM assets").fetchone()[0]
+    except sqlite3.Error:
+        existing = 0
+    finally:
+        conn.close()
+    if confirm_text is not None and existing and confirm_text.strip() != "YES":
+        flash("Nothing was changed: type YES to confirm.", "danger")
+        return redirect(request.referrer or url_for("dashboard"))
+    try:
+        backup_path = _backup_before("reset" if mode == "demo" else "delete")
+        if mode == "demo":
+            import seed
+            n_assets, n_events = seed.main()
+            msg = f"Inventory reset to demo data ({n_assets} assets, {n_events} maintenance records)."
+        else:
+            import db as db_module
+            db_module.empty_database()
+            msg = "All data deleted. The six standard places are ready for your own assets."
         if backup_path:
             msg += f" Backup saved as database/backups/{backup_path.name}"
         flash(msg, "success")
-        if request.is_json or request.headers.get("Accept") == "application/json":
+        if _wants_json():
             return {"ok": True, "message": msg}
     except Exception as e:
-        flash(f"Failed to reset demo data: {e}", "danger")
-        if request.is_json or request.headers.get("Accept") == "application/json":
+        flash(f"Failed to reset data: {e}", "danger")
+        if _wants_json():
             return {"ok": False, "error": str(e)}, 500
     return redirect(request.referrer or url_for("dashboard"))
+
+
+@app.route("/api/reset-data", methods=["POST"])
+def api_reset_data():
+    """The sidebar's Reset data dialog: mode=demo or mode=empty, plus confirm=YES when there are assets.
+    Saves a timestamped backup to database/backups/ first."""
+    body = request.get_json(silent=True) or {}
+    mode = request.form.get("mode") or body.get("mode")
+    confirm = request.form.get("confirm") if "confirm" in request.form else body.get("confirm", "")
+    return _reset(mode, confirm or "")
+
+
+@app.route("/api/reset-demo", methods=["POST"])
+def api_reset_demo():
+    """Older address, kept so existing scripts and bookmarks keep working: reset to demo data (no YES question)."""
+    return _reset("demo", None)
 
 
 @app.route("/api/backup", methods=["POST"])

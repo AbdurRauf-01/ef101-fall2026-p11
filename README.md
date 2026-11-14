@@ -77,72 +77,233 @@ Everything the app needs, with the official website for each. The launchers inst
 
 ## Run
 
-**Two-click launch** (installs Python and the packages first if they are missing; needs internet the first time):
+**Two-click launch** (checks Python and the packages; if something is missing it asks before installing. The first launch may need internet, because Flask and segno are not part of Python and are downloaded when they are not already installed):
 
-|  | Start the app | Reset to demo data | Run the tests |
+|  | Start the app | Reset or delete the data | Run the tests |
 | --- | --- | --- | --- |
-| Windows | `start.bat` | `reset-demo-data.bat` | `run-tests.bat` |
-| macOS | `start.command` | `reset-demo-data.command` | `run-tests.command` |
-| Fedora / Ubuntu | `start.sh` | `reset-demo-data.sh` | `run-tests.sh` |
+| Windows | `start.bat` | `reset-data.bat` | `run-tests.bat` |
+| macOS | `start.command` | `reset-data.command` | `run-tests.command` |
+| Fedora / Ubuntu | `start.sh` | `reset-data.sh` | `run-tests.sh` |
 
-Double-click the file (Linux: if your file manager only opens it in an editor, run `./start.sh` in a terminal, or set the file manager to "Run in terminal"). The app opens in your browser. If a copy lost its executable bit, run `chmod +x *.command *.sh scripts/*.sh` once.
+Double-click the file (Linux: if your file manager only opens it in an editor, run `./start.sh` in a terminal, or set the file manager to "Run in terminal"). The app opens in your browser.
 
-What the launcher does: finds Python 3.8+ (installs it with winget/python.org on Windows, Homebrew/python.org on macOS, dnf on Fedora, apt on Ubuntu), creates `venv/`, installs `requirements.txt` into it, then starts `backend/app.py`. Later launches skip every step that is already done. `venv/` can be deleted at any time; it is rebuilt automatically. Manual run: see "Manual run (no launcher)" below.
+If a copy lost its executable bit (ZIP files and some copies do), give the file you double-click permission once. Linux:
 
-**Reset to demo data** asks you to type YES, saves the current data as `database/backups/inventory.before-reset-<date>.db` (inside the project folder), then does the same as `python database/seed.py`. The app prints its address (http://127.0.0.1:5000, or the next free port if 5000 is busy) and the location of its data file.
+```
+chmod +x start.sh reset-data.sh run-tests.sh
+```
+
+macOS:
+
+```
+chmod +x *.command
+```
+
+Only the file you double-click needs it: `start.sh` runs `scripts/bootstrap.sh` through `bash` and reopens itself in a terminal the same way, so `scripts/bootstrap.sh` needs no `chmod`.
+
+What the launcher does: finds Python 3.8+ and checks that Flask and segno can be imported, either from `venv/` or from the system-wide Python. **If everything is there it starts `backend/app.py` straight away** (no question, no internet). If something is missing it shows what, gives the official download links, and asks:
+
+1. **Install the dependencies automatically into `venv/`** (default, press Enter). Needs internet. Python itself is installed per user when it is missing (winget or python.org on Windows, Homebrew or python.org on macOS, dnf on Fedora, apt on Ubuntu; the Linux and macOS package managers ask for your password). Flask and segno go into `venv/` only.
+2. **Install them yourself, system-wide.** The launcher shows the official pages (https://www.python.org/downloads/ and https://pypi.org/project/Flask/, https://pypi.org/project/segno/) and the exact `pip install --user` command for your Python, then asks **Y/N**: **Y** checks again and launches, **N** goes back to the menu.
+3. **Continue anyway.** Runs with what is installed; it may stop with an error (for example `No module named flask`).
+4. **Exit.** Nothing is installed.
+
+Choices 1 and 2 are the opt-in system-wide path: **`venv/` is optional.** If Flask and segno are installed in your own Python, the launcher uses that Python and never creates `venv/`. The venv only keeps the project's packages apart from the system's; it is the default because it needs no administrator rights and cannot clash with other programs.
+
+How the risk is kept low: the launcher never asks for administrator rights itself; the system-wide route (2) downloads nothing and only shows official links and a per-user (`--user`) command; Windows Python is installed for the current user only, after its download is checked for the Python Software Foundation signature (macOS: the package signature); packages are installed with `--only-binary`, so no package can run build scripts; and the install is never started without your choice. `LAUNCHER_CHOICE=1` to `4` in the environment picks a menu choice for you (scripted use), and with no keyboard attached the package menu and the Linux / macOS Python menu install nothing (in the Windows Python menu, Enter or no input means choice 1).
+
+Later launches skip every step that is already done. `venv/` can be deleted at any time; choice 1 rebuilds it. Manual run: see "Manual run (no launcher)" below.
+
+**Reset or delete the data** (`reset-data.*`) shows two choices:
+
+1. **Reset to demo data:** replaces everything with the 40 demo assets and their fault history.
+2. **Delete all data:** removes every asset, fault, repair step and maintenance record and leaves an empty database with the six standard places, ready for your own assets.
+
+Press Enter to cancel. When the database holds assets it asks you to type YES first, and it always saves the current data as `database/backups/inventory.before-reset-<date>.db` (or `before-delete-`) inside the project folder before changing anything. Options for scripted use (for example `bash scripts/bootstrap.sh reset --empty --yes`): `--demo` picks choice 1, `--empty` picks choice 2, `--yes` skips the YES question (alone it means choice 1). Choice 1 does the same as `python database/seed.py`. The app prints its address (http://127.0.0.1:5000, or the next free port if 5000 is busy) and the location of its data file.
 
 - **Your data is kept in this folder**, in `database/inventory.db`. Launching never deletes it. To move the project, move the whole folder, data included.
 - **First launch:** an empty database is created with the six standard places. Add assets from the app.
-- **Demo data (optional):** `python database/seed.py` replaces the data with 40 demo assets. It asks you to type YES first when there is data.
+- **Demo data (optional):** this replaces the data with 40 demo assets. It asks you to type YES first when there is data:
+
+  ```
+  python database/seed.py
+  ```
 - **Several copies at once:** each copy has its own data file and its own address, so you can run an older version (for example v7) next to this one to compare.
-- **Tests:** `run-tests.bat` / `run-tests.command` / `run-tests.sh` (or `python backend/test_app.py` inside the venv) runs every check (293 in version 22) on a temporary database and prints a results table. Your data is never touched.
-  - **Dependency check:** the `run-tests.*` script first looks in `venv/` for the packages the tests use. If any are missing it lists them, warns how many tests would fail or be skipped, and asks **Y/N** before downloading anything (from pypi.org, into `venv/` only). Answer **N** and the tests run anyway with what is installed; the end of the run says what was left out. `--yes` installs without asking, `--no-install` never asks (for example `bash scripts/bootstrap.sh test --no-install`).
+- **Tests:** `run-tests.bat` / `run-tests.command` / `run-tests.sh`, or this command inside the venv, runs every check (313 in version 23) on a temporary database and prints a results table. Your data is never touched.
+
+  ```
+  python backend/test_app.py
+  ```
+  - **Dependency check:** the `run-tests.*` script looks for the packages the tests use in `venv/` and in the system-wide Python. If all are there the tests simply run. If any are missing it lists them, warns how many tests would fail or be skipped, shows the official links and shows the same four-choice menu as the launcher (1 install into `venv/`, default; 2 install yourself, system-wide; 3 continue anyway; 4 exit). Choice 3 runs the tests with what is installed, and the end of the run says what was left out. `--yes` is the same as choice 1 and `--no-install` the same as choice 3, for example:
+
+    ```
+    bash scripts/bootstrap.sh test --no-install
+    ```
+
   - **How many tests depend on which package** (measured by running the suite with each package removed):
 
     | Package | Tests that depend on it | Without it |
     | --- | --- | --- |
-    | Flask (`requirements.txt`) | all 293 | the test script cannot run |
-    | segno (`requirements.txt`) | 10 | 9 tests fail (QR label page, label sheet, QR image, asset page QR card) and the QR decode test is not run, so the run ends `283/292` |
-    | numpy + zxing-cpp, or numpy + OpenCV (`requirements-test.txt`, optional) | 1 (the QR decode check) | that test is not run; the run ends `292/292` |
+    | Flask (`requirements.txt`) | all 313 | the test script cannot run |
+    | segno (`requirements.txt`) | 10 | 9 tests fail (QR label page, label sheet, QR image, asset page QR card) and the QR decode test is not run, so the run ends `303/312` |
+    | numpy + zxing-cpp, or numpy + OpenCV (`requirements-test.txt`, optional) | 1 (the QR decode check) | that test is not run; the run ends `312/312` |
 
-    The other 282 tests need nothing beyond Flask and the Python standard library.
+    The other 303 tests need nothing beyond Flask and the Python standard library.
+
+### Windows Smart App Control blocks the launchers
+
+Smart App Control (Windows 11) blocks scripts such as the `.bat` launchers when they come from the Internet, with no "run anyway" button, and Microsoft documents no way to allow a single app. Skip the launchers: a command you type is not a downloaded file, and `python.exe` from python.org is signed, so the "Manual run" steps below work. Activating the venv is optional, so once it exists you can also run the app straight from it:
+
+```
+venv\Scripts\python.exe backend\app.py
+```
+
+Flask and segno are pure Python (no compiled files). The optional test packages numpy and zxing-cpp contain compiled files that may not be signed; if Smart App Control reports "part of this app has been blocked" for them, the tests still run without them (`312/312`; choice 3 in the menu).
 
 ## Manual run (no launcher)
 
-Use this to open the project by hand after getting it from GitHub (main branch), or if the two-click launcher does not work on your computer. All commands are typed in a terminal opened **inside the project folder** (the folder that contains `backend/app.py`).
+Use this to open the project by hand after getting it from GitHub (main branch), or if the two-click launcher does not work on your computer. These steps are for **Windows** and **macOS**; Linux has its own section below. All commands are typed in a terminal opened **inside the project folder** (the folder that contains `backend/app.py`).
+
+> **macOS:** this project was **not tested on macOS**, because we do not have a Mac, and it was built with AI assistance. If an error occurs on a Mac, please [open an issue](https://github.com/AbdurRauf-01/ef101-fall2026-p11/issues) and let us know.
 
 1. **Get the project.** Either:
-   - **Clone:** `git clone https://github.com/AbdurRauf-01/ef101-fall2026-p11.git`, which creates the folder `ef101-fall2026-p11`; or
-   - **Download ZIP:** on the GitHub page of the repository (main branch) click Code, then Download ZIP, and extract it. The extracted folder is usually named `ef101-fall2026-p11-main`.
+   - **Clone.** `git clone` puts the project in the folder your terminal is currently in, so first go to the Downloads folder. Windows (Command Prompt):
+
+     ```
+     cd %USERPROFILE%\Downloads
+     ```
+
+     macOS:
+
+     ```
+     cd ~/Downloads
+     ```
+
+     Then clone (this creates the folder `ef101-fall2026-p11` inside Downloads):
+
+     ```
+     git clone https://github.com/AbdurRauf-01/ef101-fall2026-p11.git
+     ```
+
+   - **Download ZIP:** on the GitHub page of the repository (main branch) click Code, then Download ZIP, and extract it. The extracted folder is usually named `ef101-fall2026-p11-main`, in your Downloads folder.
 
    `database/inventory.db` (the demo data) comes with the project. The `venv/` folder does not, so you create it in step 4.
-2. **Install Python 3.8 or newer** (https://www.python.org/downloads/; on Windows tick "Add python.exe to PATH" in the installer). Check it: `python --version` (on macOS/Linux the command may be `python3 --version`). Ubuntu also needs `sudo apt install python3-venv python3-pip`; Fedora usually has them already.
-3. **Open a terminal in the project folder.** Windows: open the folder in File Explorer, click the address bar, type `cmd`, press Enter (or right-click, "Open in Terminal"). macOS/Linux: open Terminal and `cd` into the folder, for example `cd ~/Downloads/ef101-fall2026-p11-main`. Check you are in the right place with `dir` (Windows) or `ls` (macOS/Linux): you should see `backend/app.py`.
-4. **Create the virtual environment** (once only; this makes the `venv/` folder):
+2. **Install Python 3.8 or newer** (https://www.python.org/downloads/; on Windows tick "Add python.exe to PATH" in the installer). Check it. Windows:
 
    ```
-   python -m venv venv          # macOS/Linux: python3 -m venv venv
+   python --version
    ```
 
-5. **Activate it** (every time you open a new terminal):
+   macOS:
 
-   | System | Command |
-   | --- | --- |
-   | Windows (Command Prompt) | `venv\Scripts\activate.bat` |
-   | Windows (PowerShell) | `venv\Scripts\Activate.ps1` |
-   | macOS / Linux | `source venv/bin/activate` |
+   ```
+   python3 --version
+   ```
+3. **Open a terminal in the project folder.** If you cloned in step 1, you are one `cd` away. Windows (Command Prompt), clone:
 
-   The prompt now starts with `(venv)`. If PowerShell says scripts are disabled, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` once in that window and activate again (or use Command Prompt instead).
-6. **Install the packages** (once only, needs internet): `pip install -r requirements.txt`
-7. **Optional, data:** the shipped `database/inventory.db` already holds the demo data. To reset it to the demo data, run `python database/seed.py` (it asks you to type YES). If you copied in a `database/inventory.db` from an older version, run `python database/migrate.py` first.
-8. **Start the app:** `python backend/app.py` (optional: `python backend/app.py --port 8000` to choose the port).
+   ```
+   cd %USERPROFILE%\Downloads\ef101-fall2026-p11
+   ```
+
+   Windows, ZIP (the folder name ends in `-main`):
+
+   ```
+   cd %USERPROFILE%\Downloads\ef101-fall2026-p11-main
+   ```
+
+   macOS, clone:
+
+   ```
+   cd ~/Downloads/ef101-fall2026-p11
+   ```
+
+   macOS, ZIP:
+
+   ```
+   cd ~/Downloads/ef101-fall2026-p11-main
+   ```
+
+   (Windows alternative: open the folder in File Explorer, click the address bar, type `cmd`, press Enter.) Check you are in the right place: you should see `backend` in the list. Windows: `dir`; macOS: `ls`.
+4. **Create the virtual environment** (once only; this makes the `venv/` folder). Windows:
+
+   ```
+   python -m venv venv
+   ```
+
+   macOS:
+
+   ```
+   python3 -m venv venv
+   ```
+5. **Activate it** (every time you open a new terminal). Windows (Command Prompt):
+
+   ```
+   venv\Scripts\activate.bat
+   ```
+
+   Windows (PowerShell):
+
+   ```
+   venv\Scripts\Activate.ps1
+   ```
+
+   macOS:
+
+   ```
+   source venv/bin/activate
+   ```
+
+   The prompt now starts with `(venv)`. If PowerShell says scripts are disabled, run this once in that window and activate again (or use Command Prompt instead):
+
+   ```
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   ```
+
+   (This only changes that one window; it does not lower any system setting. It does not help with Smart App Control, see above.)
+6. **Install the packages** (once only, needs internet):
+
+   ```
+   pip install -r requirements.txt
+   ```
+7. **Optional, data:** the shipped `database/inventory.db` already holds the demo data. To reset it to the demo data, run this (it asks you to type YES):
+
+   ```
+   python database/seed.py
+   ```
+
+   If you copied in a `database/inventory.db` from an older version, run this first:
+
+   ```
+   python database/migrate.py
+   ```
+8. **Start the app:**
+
+   ```
+   python backend/app.py
+   ```
+
+   To choose the port:
+
+   ```
+   python backend/app.py --port 8000
+   ```
 9. **Open the address it prints** in your browser, normally http://127.0.0.1:5000 (the next free port if 5000 is busy). Use the address shown in your own terminal.
 10. **Stop the app** with `Ctrl+C` in the terminal. Leave the virtual environment with `deactivate`.
-11. **Run the tests (optional):** with the venv still active, `python backend/test_app.py`. It uses a temporary database, so your data is not touched, and must end with `293/293 passed` (`292/292` if the optional numpy and zxing-cpp or OpenCV packages are not installed; see the table under *Tests* above).
+11. **Run the tests (optional):** with the venv still active:
 
-Next time you only need steps 3, 5 and 8: open the terminal in the folder, activate the venv, run `python backend/app.py`. To get later changes from GitHub, run `git pull` (clone) or download the ZIP again (keep your own `database/inventory.db` if you want to keep your data).
+    ```
+    python backend/test_app.py
+    ```
 
-Common problems: `python` not found (try `python3` or `py`, or reinstall Python with PATH ticked); `No module named flask` (the venv is not active, or step 6 was skipped); `venv` was copied from another computer or another operating system (delete the `venv/` folder and repeat steps 4 to 6); "Address already in use" (the app picks the next free port by itself, or choose one with `--port`).
+    It uses a temporary database, so your data is not touched, and must end with `313/313 passed` (`312/312` if the optional numpy and zxing-cpp or OpenCV packages are not installed; see the table under *Tests* above).
+
+Next time you only need steps 3, 5 and 8: open the terminal in the folder, activate the venv, run `python backend/app.py`. To get later changes from GitHub, run this in the project folder (clone) or download the ZIP again (keep your own `database/inventory.db` if you want to keep your data):
+
+```
+git pull
+```
+
+Common problems: `python` not found (on macOS use `python3`; on Windows try `py`, or reinstall Python with PATH ticked); `No module named flask` (the venv is not active, or step 6 was skipped); `venv` was copied from another computer or another operating system (delete the `venv/` folder and repeat steps 4 to 6); "Address already in use" (the app picks the next free port by itself, or choose one with `--port`).
 
 ### Manual run on Linux (Ubuntu and Fedora): all commands in one place
 
@@ -150,21 +311,40 @@ Open a terminal (Ubuntu: Ctrl+Alt+T; Fedora: search for "Terminal"). Do step A o
 
 **A. Install the tools (once).**
 
-| System | Command |
-| --- | --- |
-| Ubuntu / Debian | `sudo apt update && sudo apt install -y git python3 python3-venv python3-pip` |
-| Fedora | `sudo dnf install -y git python3 python3-pip` |
-
-Fedora's `python3` already includes `venv`. Check the version (3.8 or newer): `python3 --version`
-
-**B. Get the project (once).** Either clone it:
+Ubuntu / Debian:
 
 ```
+sudo apt update && sudo apt install -y git python3 python3-venv python3-pip
+```
+
+Fedora:
+
+```
+sudo dnf install -y git python3 python3-pip
+```
+
+Fedora's `python3` already includes `venv`. Check the version (3.8 or newer):
+
+```
+python3 --version
+```
+
+**B. Get the project (once).** Either clone it. `git clone` puts the project in the folder your terminal is in, so go to Downloads first:
+
+```
+cd ~/Downloads
 git clone https://github.com/AbdurRauf-01/ef101-fall2026-p11.git
 cd ef101-fall2026-p11
 ```
 
-or download the ZIP of the main branch from GitHub and extract it (`unzip ef101-fall2026-p11-main.zip`, or right-click, Extract), then `cd` into the folder, for example `cd ~/Downloads/ef101-fall2026-p11-main`. In the file manager you can also right-click inside the folder and choose "Open in Terminal". Check with `ls` that you can see `backend/app.py`.
+or download the ZIP of the main branch from GitHub and extract it, then `cd` into the folder:
+
+```
+unzip ef101-fall2026-p11-main.zip
+cd ~/Downloads/ef101-fall2026-p11-main
+```
+
+(or right-click, Extract, and in the file manager right-click inside the folder and choose "Open in Terminal"). Check with `ls` that you can see `backend/app.py`.
 
 **C. Create the virtual environment and install Flask (once).**
 
@@ -182,43 +362,64 @@ source venv/bin/activate      # the prompt now starts with (venv)
 python backend/app.py
 ```
 
-Open the printed address (normally http://127.0.0.1:5000) in the browser, or run `xdg-open http://127.0.0.1:5000` from a second terminal. Stop with `Ctrl+C`, then `deactivate`.
+Open the printed address (normally http://127.0.0.1:5000) in the browser, or open it from a second terminal:
+
+```
+xdg-open http://127.0.0.1:5000
+```
+
+Stop with `Ctrl+C`, then `deactivate`.
 
 Linux notes:
 - Inside the activated venv, `python` and `pip` work (the venv provides them). Outside it, use `python3`.
-- `The virtual environment was not created successfully` or `ensurepip is not available` on Ubuntu: `python3-venv` is missing; run the Ubuntu command in step A, delete the half-made folder with `rm -rf venv`, and repeat step C.
+- `The virtual environment was not created successfully` or `ensurepip is not available` on Ubuntu: `python3-venv` is missing; run the Ubuntu command in step A, delete the half-made folder, and repeat step C:
+
+  ```
+  rm -rf venv
+  ```
+
 - `error: externally-managed-environment` when running pip: you are outside the venv. Run `source venv/bin/activate` first; do not use `--break-system-packages`.
 - `command not found: git`: install it as in step A, or use the ZIP download instead.
-- Optional: `python database/seed.py` resets the data to the demo data (type YES), and `python backend/test_app.py` runs the 293 checks.
-- If a double-click launcher does not run, give it permission once: `chmod +x start.sh reset-demo-data.sh run-tests.sh scripts/*.sh`, then `./start.sh`. This manual route does not need it.
+- Optional: reset the data to the demo data (type YES), and run the 313 checks:
+
+  ```
+  python database/seed.py
+  python backend/test_app.py
+  ```
+- If a double-click launcher does not run, give the file you double-click permission once, then double-click it or run `./start.sh`. `scripts/bootstrap.sh` needs no `chmod`. This manual route does not need any of it.
+
+  ```
+  chmod +x start.sh reset-data.sh run-tests.sh
+  ```
 
 ## Files
 
 **Project layout**
 
 ```
-backend/     app.py (Flask routes), qr_labels.py (QR text and codes), test_app.py (tests)
+backend/     app.py (Flask routes), cpu_catalog.py (CPU and family lists and match check), qr_labels.py (QR text and codes), test_app.py (tests)
 database/    inventory.db, schema.sql, db.py, queries.py (all SQL), seed.py, migrate.py, backups/ (created when needed)
-frontend/    templates/ (HTML pages), static/ (CSS, scan.js, bundled jsQR)
+frontend/    templates/ (HTML pages), static/ (CSS, scan.js, cpu-fields.js, combobox.js, bundled jsQR)
 scripts/     launcher code used by the start / reset / test files in the project folder
-docs/  changelogs/  README.md  TEAM_SPLIT.md  requirements*.txt  start.*  reset-demo-data.*  run-tests.*
+docs/  changelogs/  README.md  TEAM_SPLIT.md  requirements*.txt  start.*  reset-data.*  run-tests.*
 ```
 
 | File | Purpose |
 | --- | --- |
-| `start.*`, `reset-demo-data.*`, `run-tests.*`, `scripts/` | Launchers per OS: dependency check/install, venv, start, demo reset, tests (asks before installing test packages) |
+| `start.*`, `reset-data.*`, `run-tests.*`, `scripts/` | Launchers per OS: dependency check, four-choice install menu (venv, system-wide, continue, exit), start, demo reset, tests (nothing is installed without asking) |
 | `requirements.txt` | Python packages the app needs (Flask, segno) |
 | `requirements-test.txt` | Optional packages used only by `backend/test_app.py` (numpy, zxing-cpp) |
 | `backend/app.py` | Backend: routes, input validation, CSV export, printable reports, backup (no SQL) |
+| `backend/cpu_catalog.py` | The finite list of CPU families, a list of common CPU models (suggestions only), the pattern rules that read the family out of a CPU name, and the check that a CPU belongs to its family |
 | `backend/qr_labels.py` | The spec text stored in a label, the QR code itself (SVG, made with segno) and the rule that turns a scanned text into an asset ID |
 | `database/queries.py` | Database layer: every SQL statement (filters, saves, dashboard figures) |
 | `database/db.py` | SQLite connection + schema creation |
 | `database/schema.sql` | The four tables: `locations`, `assets`, `fault_steps` (steps of an open fault) and `maintenance` (history) |
 | `database/seed.py` | Demo data generator (fixed random seed, reproducible) |
 | `database/migrate.py` | Upgrades an older `database/inventory.db` to the current version without losing data (backup kept, safe to run twice) |
-| `changelogs/` | Version history: `changelogs/v22.md` (what changed in version 22), `changelogs/v21.md`, `changelogs/v20.md` and older |
+| `changelogs/` | Version history: `changelogs/v23.md` (what changed in version 23), `changelogs/v22.md`, `changelogs/v21.md`, `changelogs/v20.md` and older |
 | `backend/test_app.py` | Test evidence (add, edit, retire, invalid input, duplicates, filters, history, dashboard, export) |
-| `frontend/templates/`, `frontend/static/` | HTML (Jinja) pages and the stylesheet; `frontend/static/scan.js` is the Scan page script and `frontend/static/vendor/jsQR.js` the bundled QR reader (Apache-2.0, licence beside it) |
+| `frontend/templates/`, `frontend/static/` | HTML (Jinja) pages and the stylesheet; `frontend/static/cpu-fields.js` fills the CPU family on the Add / Edit form, `frontend/static/combobox.js` draws its type-to-filter lists, `frontend/static/scan.js` is the Scan page script and `frontend/static/vendor/jsQR.js` the bundled QR reader (Apache-2.0, licence beside it) |
 | `frontend/templates/report_assets.html` | Standalone printable asset inventory report (no base.html, `@media print` CSS) |
 | `frontend/templates/report_maintenance.html` | Standalone printable maintenance/fault history report |
 | `database/backups/` | Timestamped database backups — created automatically on reset or when *Backup data* is clicked |
@@ -227,7 +428,14 @@ docs/  changelogs/  README.md  TEAM_SPLIT.md  requirements*.txt  start.*  reset-
 
 Only needed if you already have a `database/inventory.db` from an older version. This version ships with its own up-to-date `database/inventory.db`, so a fresh copy needs nothing.
 
-Run `python database/migrate.py` once (or `python database/migrate.py path/to/inventory.db`). It keeps a backup as `inventory.db.bak` first, checks the new database (row counts, integrity, foreign keys) before replacing the old one, and does nothing if the database is already up to date (running it twice is safe).
+Run this once (or add the path to your database after it):
+
+```
+python database/migrate.py
+python database/migrate.py path/to/inventory.db
+```
+
+It keeps a backup as `inventory.db.bak` first, checks the new database (row counts, integrity, foreign keys) before replacing the old one, and does nothing if the database is already up to date (running it twice is safe).
 
 - **From version 14-15.x** (the database already has `fault_steps`): everything is kept exactly as it is: assets, places and their range numbers, IP addresses, history, and the steps of open faults. The only change is that steps no longer carry a cost. The cost of an open fault stays on the asset as its single Updated Cost (if an open fault had none, the cost of its last step becomes the Updated Cost). Old steps that only held a cost (no action) are removed.
 - **From version 8-13** (no `fault_steps` table): incomplete history entries (a blank or Unknown field) are removed, valid entries logged while a fault was open become its steps, invalid or repeated IP addresses are left as Not Assigned, and everything removed or changed is listed on screen.
@@ -247,6 +455,7 @@ Run `python database/migrate.py` once (or `python database/migrate.py path/to/in
 - **Sorting**: the asset list sorts by any column (click a heading; click again to reverse). The Status heading cycles which status comes first: Operational (green), Under Repair (yellow), Faulty (red); the other statuses follow alphabetically. The default is Asset ID, ascending.
 - **Fault categories**: maintenance events use a fixed drop-down (Disk failure, Overheating, Network issue, RAM fault, OS corruption, Display issue, PSU failure, Other, Unknown). The failure chart always shows every category; anything unexpected is counted as Other.
 - **Locations**: a place is chosen from a drop-down, or added with **+ Add new location** (it then appears on the dashboard, even while empty). Each place has a short code (for example Lab 4 = `L4`).
+- **CPU and CPU family** (version 23): both boxes are text boxes with a drop-down list that narrows as you type (about 240 common CPU models and 40 families, Intel, AMD, Apple and Qualcomm, desktop and laptop). Picking or typing a CPU fills the family. The two must match: `Intel Core i5-12400` with family `Core i3` is rejected with a message, both in the browser hint and on Save. Any other CPU model can still be typed, because the family is read from the name by rules (so new models match without an update). A CPU the rules do not recognise must use the family `Other`. No database change.
 - **RAM type**: DDR1 to DDR5 drop-down, required for every asset (12th to 14th gen Intel CPUs can take DDR4 or DDR5, so the type is recorded per machine).
 - **Dashboard charts** are computed from the same active-asset query as the totals, so the charts always add up to the total.
 - **Warranty label**: `WARRANTY_SOON_DAYS` (30) at the top of `database/queries.py` sets the Expiring soon window.
@@ -257,7 +466,7 @@ Run `python database/migrate.py` once (or `python database/migrate.py path/to/in
 - **QR labels and scanning** (bonus, version 20): every asset has a QR code holding a short plain-text block of its specs (asset ID, model, CPU, RAM, storage, GPU, OS, IP, location, warranty expiry) and its status with an *as of* date. Any phone camera shows that text with no network, so the specs can be read even though the app runs only on this computer. The text is a snapshot: after a spec or status change the label must be printed again (the printed date shows its age); the asset page in the app is always current. Fault details and costs are never put on a label. The asset page shows the code with *Print label* and *Download SVG*; *QR Labels* in the sidebar (or the *QR labels* button on the Assets list, which keeps the current search and filters) opens a printable sheet of labels (QR, ID, model, place, warranty, printed date). The *Scan QR* page reads a label with the camera, from an uploaded photo, or from the text box (a USB barcode scanner types into it), asks the app which asset the text means (`/api/scan-lookup`; the spec block, an older link, `EF101-ASSET:<ID>` or a bare ID are all understood, upper/lower case ignored) and opens it. Reading happens in the browser, nothing is sent anywhere else. The camera needs `http://127.0.0.1` or `localhost`. The app answers only to 127.0.0.1 and localhost unless `INVENTORY_ALLOWED_HOSTS` is set, so a phone cannot open the app itself; it reads the specs from the code instead. If `segno` is missing the label pages show an install hint and every other page still works.
 - **Exports**: CSV cells that start with `=` `+` `-` `@` get a leading apostrophe so Excel/Calc cannot run them as formulas; files carry a UTF-8 byte-order mark so accents open correctly.
 - **Printable reports** (version 21): `/report/assets` and `/report/maintenance` serve standalone HTML pages with `@media print` CSS. They follow the same filters and sort as the main list pages. The *Print / Save PDF* browser button renders the report; there is no server-side PDF. Linked from the sidebar and from *Print Report* buttons on the Assets and Fault History pages.
-- **Backup** (version 21): The *Backup data* button in the sidebar saves a timestamped copy of `database/inventory.db` to the `database/backups/` folder without resetting anything. The *Reset to demo data* sidebar button and the `reset-demo-data.*` scripts also save a backup to `database/backups/` before wiping. Backups are plain SQLite files and can be restored by renaming one back to `database/inventory.db`.
+- **Backup** (version 21): The *Backup data* button in the sidebar saves a timestamped copy of `database/inventory.db` to the `database/backups/` folder without resetting anything. The sidebar's *Reset data* button (version 23: a dialog with *Reset to demo data* and *Delete all data*, confirmed by typing YES) and the `reset-data.*` scripts also save a backup to `database/backups/` before changing anything. Backups are plain SQLite files and can be restored by renaming one back to `database/inventory.db`.
 - **Old databases**: starting the app on a `database/inventory.db` from an older version stops with a message to run `python database/migrate.py`.
 - All SQL uses `?` placeholders (no string-built values), so search input cannot inject SQL.
 
@@ -265,7 +474,7 @@ Run `python database/migrate.py` once (or `python database/migrate.py path/to/in
 
 **Software:** Python, Flask, SQLite (built-in `sqlite3`), Jinja templates and plain CSS. The QR codes are drawn by the Python package `segno` (BSD) and read in the browser by `jsQR` (Apache-2.0, one file bundled in `frontend/static/vendor/`, so nothing is loaded from the Internet at run time; `segno` is installed from the Python package index with the other requirements). No font, script or image is loaded from the Internet. No external data or assets are used; the demo data is generated by `database/seed.py`.
 
-**AI:** Claude (Anthropic) was used to draft the application code, the demo-data script, the test script and report skeleton. Later versions of the project (up to version 22) were improved and fixed using several Claude accounts. Version 19 (9 Nov 2026), built by Irteza Raza and Abdur Rauf with Claude from the interface ideas proposed by Hassan Majid, changed the interface styling, sidebar counts and the Credits, Privacy, Contact and Schema text, and added the IP suggestion and two helper routes (listed in CHANGELOG.md). A final review on 12 Nov 2026 and another on 13 Nov 2026 (also with Claude) found and fixed further errors (version 22: the test count, the folder layout and the test launchers). The screenshots in Figures 3 to 5 were captured from the running app (version 21, demo database) on 12 Nov 2026 and cropped for this report.
+**AI:** Claude (Anthropic) was used to draft the application code, the demo-data script, the test script and report skeleton. Later versions of the project (up to version 23) were improved and fixed using several Claude accounts. Version 19 (9 Nov 2026), built by Irteza Raza and Abdur Rauf with Claude from the interface ideas proposed by Hassan Majid, changed the interface styling, sidebar counts and the Credits, Privacy, Contact and Schema text, and added the IP suggestion and two helper routes (listed in the v19 changelog on GitHub). A final review on 12 Nov 2026 and another on 13 Nov 2026 (also with Claude) found and fixed further errors (version 22: the test count, the folder layout and the test launchers). The screenshots in Figures 3 to 5 were captured from the running app (version 21, demo database) on 12 Nov 2026 and cropped for this report.
 
 **Who did what** (same as report section 9):
 

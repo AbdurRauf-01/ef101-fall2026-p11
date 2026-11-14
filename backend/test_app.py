@@ -1078,8 +1078,8 @@ import qr_labels                      # noqa: E402
 
 QA = "L1-PC-004"                       # an active demo asset
 active_ids = [r["asset_id"] for r in queries.filtered_assets({})]
-check("Version number", "appmod.APP_VERSION and the sidebar", "22, shown as v22",
-      appmod.APP_VERSION == "22" and "v22" in client.get("/dashboard").get_data(as_text=True))
+check("Version number", "appmod.APP_VERSION and the sidebar", "23, shown as v23",
+      appmod.APP_VERSION == "23" and "v23" in client.get("/dashboard").get_data(as_text=True))
 check("GitHub link constant", "appmod.GITHUB_URL", "AbdurRauf-01/ef101-fall2026-p11",
       appmod.GITHUB_URL == "https://github.com/AbdurRauf-01/ef101-fall2026-p11")
 
@@ -1294,6 +1294,104 @@ check("Demo data is identical on every reset", "seed.main() called twice in one 
 dash = client.get("/dashboard").get_data(as_text=True)
 check("Sidebar v21 links and buttons", "GET /dashboard", "Asset Report, Maintenance Report, Backup data button",
       "Asset Report" in dash and "Maintenance Report" in dash and "Backup data" in dash)
+
+# ---- Reset data dialog: reset to demo data, or delete all data ----
+check("Sidebar has one Reset data button with both choices", "GET /dashboard",
+      "Reset data button, dialog with demo and delete options, posting to /api/reset-data",
+      'id="reset-open"' in dash and 'value="demo"' in dash and 'value="empty"' in dash
+      and "/api/reset-data" in dash and "/api/reset-demo" not in dash)
+before_assets = count("SELECT COUNT(*) FROM assets")
+no_yes = client.post("/api/reset-data", data={"mode": "empty", "confirm": "no"}, follow_redirects=True)
+bad_mode = client.post("/api/reset-data", data={"mode": "something", "confirm": "YES"}, follow_redirects=True)
+check("Delete all data needs YES and a valid choice", "mode=empty with confirm=no; mode=something with YES",
+      "both refused, nothing changed",
+      "type YES to confirm" in no_yes.get_data(as_text=True) and "choose Reset to demo data" in bad_mode.get_data(as_text=True)
+      and count("SELECT COUNT(*) FROM assets") == before_assets == 40)
+gone = client.post("/api/reset-data", data={"mode": "empty", "confirm": "YES"}, follow_redirects=True)
+backups_now = sorted(p.name for p in appmod.BACKUPS_DIR.glob("inventory.before-delete-*.db"))
+pages_ok = all(client.get(u).status_code == 200 for u in ("/dashboard", "/assets", "/assets/new", "/maintenance"))
+check("Delete all data empties the database and keeps the six places", "POST /api/reset-data mode=empty confirm=YES",
+      "0 assets, steps and history; 6 places; before-delete backup saved; pages still open",
+      count("SELECT COUNT(*) FROM assets") == 0 and count("SELECT COUNT(*) FROM maintenance") == 0
+      and count("SELECT COUNT(*) FROM fault_steps") == 0 and count("SELECT COUNT(*) FROM locations") == 6
+      and bool(backups_now) and "All data deleted" in gone.get_data(as_text=True) and pages_ok and db.schema_problem() is None)
+back = client.post("/api/reset-data", data={"mode": "demo"}, follow_redirects=True)
+check("Reset to demo data from the dialog", "POST /api/reset-data mode=demo on an empty database",
+      "40 assets and 43 events again (no YES needed when nothing is there)",
+      count("SELECT COUNT(*) FROM assets") == 40 and count("SELECT COUNT(*) FROM maintenance") == 43
+      and "(40 assets, 43 maintenance records)" in back.get_data(as_text=True))
+
+# ---- CPU and family lists, and the CPU / family match (version 23) ----
+import cpu_catalog                     # noqa: E402
+
+fams, models = cpu_catalog.FAMILIES, cpu_catalog.CPU_MODELS
+check("CPU family list is finite and clean", "backend/cpu_catalog.py FAMILIES",
+      "no duplicates, includes 'Other'", len(fams) == len(set(fams)) and cpu_catalog.OTHER in fams)
+check("CPU model suggestions are clean", "CPU_MODELS",
+      "no duplicates, every model maps to a family in the list",
+      len(models) == len(set(models)) and all(cpu_catalog.family_for_cpu(m) in fams for m in models))
+pairs = [("Intel Core i5-12400", "Core i5"), ("Intel Core i3-10100", "Core i3"), ("Intel Core i9-14900K", "Core i9"),
+         ("Intel Core i7-1365U", "Core i7"), ("Intel Core Ultra 7 155H", "Core Ultra 7"),
+         ("Intel Core 5 120U", "Core 5"), ("Intel Xeon W-2245", "Xeon"), ("Intel Pentium Gold G5400", "Pentium"),
+         ("Intel Celeron N4500", "Celeron"), ("Intel Processor N100", "Intel N-series"),
+         ("Intel Core 2 Duo E8400", "Core 2 Duo"), ("AMD Ryzen 5 5600X", "Ryzen 5"),
+         ("AMD Ryzen 7 PRO 5850U", "Ryzen 7"), ("AMD Ryzen 9 7945HX", "Ryzen 9"), ("AMD Ryzen AI 9 HX 370", "Ryzen AI 9"),
+         ("AMD Ryzen Threadripper PRO 5975WX", "Threadripper"), ("AMD EPYC 7402P", "EPYC"), ("AMD Athlon 3000G", "Athlon"),
+         ("AMD FX-8350", "FX"), ("AMD A10-9700", "A-Series"), ("Apple M2 Pro", "Apple M2"),
+         ("Snapdragon X Elite X1E-80-100", "Snapdragon X"),
+         ("Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz", "Core i5"), ("i7-9700", "Core i7")]
+wrong = [(c, f, cpu_catalog.family_for_cpu(c)) for c, f in pairs if cpu_catalog.family_for_cpu(c) != f]
+check("CPU name gives its family (desktop and laptop, Intel, AMD, Apple, Qualcomm)", f"{len(pairs)} CPU names",
+      "each gives the right family", not wrong)
+
+n0 = count("SELECT COUNT(*) FROM assets")
+r = client.post("/assets/new", data={**GOOD, "asset_id": "CPU-1", "cpu": "Intel Core i5-12400", "cpu_family": "Core i3"})
+check("CPU i5 with family i3 is rejected", "Intel Core i5-12400 + Core i3",
+      "error names 'Core i5', nothing saved",
+      "belongs to the family &#39;Core i5&#39;, not &#39;Core i3&#39;" in r.get_data(as_text=True)
+      and count("SELECT COUNT(*) FROM assets") == n0)
+r = client.post("/assets/new", data={**GOOD, "asset_id": "CPU-2", "cpu": "AMD Ryzen 5 5600X", "cpu_family": "Core i5"})
+check("AMD Ryzen with an Intel family is rejected", "AMD Ryzen 5 5600X + Core i5", "rejected, nothing saved",
+      count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-2'") == 0 and "Ryzen 5" in r.get_data(as_text=True))
+client.post("/assets/new", data={**GOOD, "asset_id": "CPU-3", "cpu": "AMD Ryzen 7 5700G", "cpu_family": "ryzen 7"})
+check("Family typed in other case is accepted and stored as listed", "family 'ryzen 7'", "stored as 'Ryzen 7'",
+      count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-3' AND cpu_family='Ryzen 7'") == 1)
+client.post("/assets/new", data={**GOOD, "asset_id": "CPU-4", "cpu": "Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz",
+                                 "cpu_family": "Core i7"})
+check("CPU copied from Windows is accepted", "Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz + Core i7", "saved",
+      count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-4'") == 1)
+r = client.post("/assets/new", data={**GOOD, "asset_id": "CPU-5", "cpu": "VIA Nano U3100", "cpu_family": "Core i5"})
+check("Unknown CPU cannot claim a family", "VIA Nano U3100 + Core i5", "rejected: not recognised, nothing saved",
+      "not recognised" in r.get_data(as_text=True) and count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-5'") == 0)
+client.post("/assets/new", data={**GOOD, "asset_id": "CPU-6", "cpu": "VIA Nano U3100", "cpu_family": "Other"})
+check("Unknown CPU is accepted with family 'Other'", "VIA Nano U3100 + Other", "saved",
+      count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-6' AND cpu_family='Other'") == 1)
+client.post("/assets/new", data={**GOOD, "asset_id": "CPU-7", "cpu": "Intel Core i5-12400", "cpu_family": "Other"})
+check("Known CPU cannot use family 'Other'", "Intel Core i5-12400 + Other", "rejected, nothing saved",
+      count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-7'") == 0)
+client.post("/assets/CPU-4/edit", data={**GOOD, "asset_id": "CPU-4", "cpu": "Intel Core i7-8550U", "cpu_family": "Core i3"})
+check("Edit with a mismatching family is rejected", "CPU-4 family changed to Core i3", "stored value unchanged",
+      count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-4' AND cpu_family='Core i7'") == 1)
+client.post("/assets/CPU-4/edit", data={**GOOD, "asset_id": "CPU-4", "cpu": "Intel Core i5-1135G7", "cpu_family": "Core i5"})
+check("Edit with a matching CPU and family is saved", "CPU-4 changed to i5-1135G7 + Core i5", "saved",
+      count("SELECT COUNT(*) FROM assets WHERE asset_id='CPU-4' AND cpu='Intel Core i5-1135G7'") == 1)
+api = client.get("/api/cpu-family", query_string={"cpu": "AMD Ryzen 9 5900X"}).get_json()
+none = client.get("/api/cpu-family", query_string={"cpu": "VIA Nano"}).get_json()
+check("Family lookup for the form", "/api/cpu-family", "Ryzen 9 for a Ryzen 9, null for an unknown CPU",
+      api["family"] == "Ryzen 9" and none["family"] is None)
+form = client.get("/assets/new").get_data(as_text=True)
+check("Form offers CPU and family lists that filter as you type", "GET /assets/new",
+      "text boxes with datalists holding every model and family, plus the helper scripts",
+      'list="cpu-models"' in form and 'list="cpu-families"' in form
+      and form.count("<option value=") >= len(models) + len(fams) and "cpu-fields.js" in form and "combobox.js" in form)
+check("Helper scripts are served", "GET /static/cpu-fields.js and /static/combobox.js", "200 and 200",
+      client.get("/static/cpu-fields.js").status_code == 200 and client.get("/static/combobox.js").status_code == 200)
+seed.main()
+conn = db.get_db()
+demo_bad = [r["asset_id"] for r in conn.execute("SELECT asset_id, cpu, cpu_family FROM assets").fetchall()
+            if cpu_catalog.check_cpu_family(r["cpu"], r["cpu_family"])[1]]
+conn.close()
+check("Every demo asset passes the CPU / family check", "40 demo assets after seed.main()", "no mismatch", not demo_bad)
 
 # ---- report ----
 w = [max(len(str(r[i])) for r in results + [("Test", "Input", "Expected", "Result")]) for i in range(4)]

@@ -225,12 +225,10 @@
         </button>
       </form>
 
-      <form method="post" action="{{ url_for('api_reset_demo') }}" onsubmit="return confirm('Reset all inventory data back to the demo state (40 demo assets and 43 maintenance records)? A backup will be saved to backups/ first.')">
-        <button type="submit" class="btn sec" style="width:100%;font-size:11px;color:var(--muted);border:none;background:transparent;box-shadow:none">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-          Reset to demo data
-        </button>
-      </form>
+      <button type="button" id="reset-open" class="btn sec" style="width:100%;font-size:11px;color:var(--muted);border:none;background:transparent;box-shadow:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        Reset data
+      </button>
     </div>
   </aside>
 
@@ -417,6 +415,45 @@
       if (e.key === 'Home')       { setWidth(DEFAULT); e.preventDefault(); }
     });
   }
+})();
+</script>
+
+<dialog id="reset-dialog" class="reset-dialog" aria-labelledby="reset-title">
+  <form method="post" action="{{ url_for('api_reset_data') }}" id="reset-form">
+    <h2 id="reset-title">Reset data</h2>
+    <p class="muted">Choose what to do. A backup copy of the current data is saved to <code>database/backups/</code> first.</p>
+    <label class="reset-opt">
+      <input type="radio" name="mode" value="demo" required>
+      <span><strong>Reset to demo data</strong><br><span class="muted">Replaces everything with the 40 demo assets and their fault history.</span></span>
+    </label>
+    <label class="reset-opt">
+      <input type="radio" name="mode" value="empty">
+      <span><strong>Delete all data</strong><br><span class="muted">Removes every asset, fault, repair step and maintenance record. Only the six standard places stay, ready for your own assets.</span></span>
+    </label>
+    <label for="reset-confirm" style="margin-top:12px">Type YES to confirm</label>
+    <input id="reset-confirm" name="confirm" autocomplete="off" placeholder="YES">
+    <div class="reset-actions">
+      <button type="button" class="btn sec" id="reset-cancel">Cancel</button>
+      <button type="submit" class="btn danger" id="reset-go" disabled>Reset data</button>
+    </div>
+  </form>
+</dialog>
+<script>
+(function () {
+  var dlg = document.getElementById('reset-dialog'), open = document.getElementById('reset-open');
+  if (!dlg || !open) return;
+  var form = document.getElementById('reset-form'), conf = document.getElementById('reset-confirm'), go = document.getElementById('reset-go');
+  function check() {
+    go.disabled = !(form.querySelector('input[name=mode]:checked') && conf.value.trim() === 'YES');
+  }
+  open.addEventListener('click', function () {
+    form.reset(); check();
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  });
+  document.getElementById('reset-cancel').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });   // click on the backdrop
+  form.addEventListener('change', check);
+  conf.addEventListener('input', check);
 })();
 </script>
 </body>

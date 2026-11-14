@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # macOS / Fedora / Ubuntu bootstrap. Usage: bootstrap.sh start|reset|test
-# Makes sure a usable Python 3.8+ (with venv + pip) exists - installing it if not - then hands over to launcher.py.
+# Makes sure a usable Python 3.8+ exists, then hands over to launcher.py (which checks Flask, segno ... and shows its
+# own menu). If Python is missing, a menu asks first: 1 install automatically (default), 2 install it yourself
+# (official links shown), 3 continue anyway, 4 exit. Nothing is installed without that choice.
 set -u
 
 ACTION="${1:-start}"
+EXTRA=("${@:2}")      # extra options for launcher.py, e.g. --no-install, --demo, --empty, --yes
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$HERE")"
 cd "$ROOT" || exit 1
@@ -28,7 +31,7 @@ relaunch_in_terminal() {
     [ -n "${LAUNCHER_IN_TERMINAL:-}" ] && return 0
     [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] || return 0   # no graphical session
     local e=(env LAUNCHER_IN_TERMINAL=1 LAUNCHER_PAUSE=1)
-    local self=("$HERE/bootstrap.sh" "$ACTION")
+    local self=(bash "$HERE/bootstrap.sh" "$ACTION" ${EXTRA[@]+"${EXTRA[@]}"})   # run through bash: bootstrap.sh itself needs no chmod +x
     if command -v x-terminal-emulator >/dev/null 2>&1; then exec "${e[@]}" x-terminal-emulator -e "${self[@]}"; fi
     if command -v gnome-terminal >/dev/null 2>&1; then exec "${e[@]}" gnome-terminal -- "${self[@]}"; fi
     if command -v konsole >/dev/null 2>&1; then exec "${e[@]}" konsole -e "${self[@]}"; fi
@@ -51,6 +54,10 @@ venv_capable() {  # $1 = python: can really build a venv with pip (Ubuntu/Debian
     return $rc
 }
 
+has_packages() {  # $1 = python: Flask and segno are already installed (system-wide), so no venv is needed
+    "$1" -c 'import flask, segno' >/dev/null 2>&1
+}
+
 find_python() {
     PY=""
     local candidates=()
@@ -64,6 +71,12 @@ find_python() {
     for c in python3 python; do
         if command -v "$c" >/dev/null 2>&1; then candidates+=("$(command -v "$c")"); fi
     done
+    # 1st choice: a Python that already has everything (installed system-wide) - no venv needed.
+    for c in "${candidates[@]}"; do
+        [ "$OS" = "Darwin" ] && [ "$c" = "/usr/bin/python3" ] && ! xcode-select -p >/dev/null 2>&1 && continue
+        if [ -x "$c" ] && py_ok "$c" && has_packages "$c"; then PY="$c"; return 0; fi
+    done
+    # 2nd choice: any Python 3.8+ that can build a venv (the launcher then offers to install the packages into it).
     for c in "${candidates[@]}"; do
         [ "$OS" = "Darwin" ] && [ "$c" = "/usr/bin/python3" ] && ! xcode-select -p >/dev/null 2>&1 && continue
         if [ -x "$c" ] && py_ok "$c" && venv_capable "$c"; then PY="$c"; return 0; fi
@@ -120,6 +133,58 @@ install_python_linux() {
     esac
 }
 
+python_menu() {
+    # Python 3.8+ is missing: ask before installing anything.
+    local preset="${LAUNCHER_CHOICE:-}" choice ans
+    while true; do
+        say ""
+        say "A usable Python 3.8+ (with venv and pip) was not found."
+        say "Official source: https://www.python.org/downloads/"
+        say ""
+        say "  1. Install Python automatically (default; needs internet; the packages then go into venv/)"
+        say "  2. Install Python yourself, system-wide (shows the official links first)"
+        say "  3. Continue anyway (may stop with an error)"
+        say "  4. Exit"
+        if [ -n "$preset" ]; then choice="$preset"; say "Choice $choice (preset)."; preset=""
+        else
+            printf 'Choose 1-4 [1]: '
+            if ! read -r choice; then
+                say ""; say "No keyboard input, so nothing was installed. Run again in a terminal, or set LAUNCHER_CHOICE=1."
+                finish 0
+            fi
+            [ -z "$choice" ] && choice=1
+        fi
+        case "$choice" in
+            1)
+                say ""
+                if [ "$OS" = "Darwin" ]; then install_python_macos; else install_python_linux; fi
+                hash -r
+                if find_python; then export LAUNCHER_CHOICE=1; return 0; fi
+                say ""; say "Python is still not usable after the install attempt." ;;
+            2)
+                say ""
+                say "Install Python yourself. Download only from the official site: https://www.python.org/downloads/"
+                case "$OS" in
+                    Darwin) say "  macOS: the python.org installer, or Homebrew (https://brew.sh): brew install python" ;;
+                    *)      say "  Fedora:        sudo dnf install python3 python3-pip"
+                            say "  Ubuntu/Debian: sudo apt install python3 python3-venv python3-pip" ;;
+                esac
+                say "  Safer this way: this script runs nothing with administrator rights and downloads nothing."
+                say "  Then run this script again, or answer Y below."
+                printf 'Done installing? Y = check again and launch, N = back to the menu [Y/N]: '
+                if read -r ans && [ "${ans#[Yy]}" != "$ans" ]; then
+                    hash -r
+                    if find_python; then return 0; fi
+                    say ""; say "Checked again: Python 3.8+ was not found."
+                fi ;;
+            3)
+                say ""; say "Nothing can run without Python 3.8+. Pick 1 or 2, or 4 to exit." ;;
+            4)
+                say "Exited. Nothing was installed."; finish 0 ;;
+        esac
+    done
+}
+
 relaunch_in_terminal
 
 # Fast path: a working venv already exists, so no system Python checks are needed.
@@ -127,18 +192,8 @@ VENV_PY="$ROOT/venv/bin/python"
 if [ -x "$VENV_PY" ] && "$VENV_PY" -c 'import sys' >/dev/null 2>&1; then
     PY="$VENV_PY"
 else
-    if ! find_python; then
-        say "A usable Python 3.8+ (with venv and pip) was not found. Installing it ..."
-        if [ "$OS" = "Darwin" ]; then install_python_macos; else install_python_linux; fi
-        hash -r
-        if ! find_python; then
-            say ""
-            say "ERROR: Python is still not usable after the install attempt."
-            [ "$OS" = "Darwin" ] && say "Install Python from https://www.python.org/downloads/ and run this again."
-            finish 1
-        fi
-    fi
+    if ! find_python; then python_menu; fi
 fi
 
-"$PY" "$HERE/launcher.py" "$ACTION"
+"$PY" "$HERE/launcher.py" "$ACTION" ${EXTRA[@]+"${EXTRA[@]}"}
 finish $?

@@ -1,15 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1370" viewBox="0 0 1400 1370" font-family="DejaVu Sans, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1404" viewBox="0 0 1400 1404" font-family="DejaVu Sans, Arial, sans-serif">
 <defs><marker id="a" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#14213d"/></marker></defs>
-<rect x="0" y="0" width="1400" height="1370" rx="0" fill="#fff"/>
+<rect x="0" y="0" width="1400" height="1404" rx="0" fill="#fff"/>
 <text x="30" y="44" font-size="26" font-weight="bold" fill="#14213d" text-anchor="start">EF101-P11  Computer Hardware Inventory and Maintenance System: project schema</text>
-<text x="30" y="70" font-size="14" font-weight="normal" fill="#64707d" text-anchor="start">Version 22. Everything runs on one computer: Flask and segno are installed into venv/ once; at run time nothing is loaded from the Internet.</text>
+<text x="30" y="70" font-size="14" font-weight="normal" fill="#64707d" text-anchor="start">Version 23. Everything runs on one computer: Flask and segno are installed into venv/ once; at run time nothing is loaded from the Internet.</text>
 <rect x="30" y="100" width="270" height="690" rx="8" fill="#fff" stroke="#2457c5" stroke-width="2"/>
 <path d="M30,108 a8,8 0 0 1 8,-8 h254 a8,8 0 0 1 8,8 v28 h-270 z" fill="#2457c5"/>
 <text x="44" y="125" font-size="16" font-weight="bold" fill="#fff" text-anchor="start">1  Browser  (frontend/)</text>
 <text x="46" y="162" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">Pages (frontend/templates/):</text>
 <text x="46" y="182" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">  • Dashboard</text>
 <text x="46" y="202" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">  • Assets list, search, filters</text>
-<text x="46" y="222" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">  • Add / edit asset form</text>
+<text x="46" y="222" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">  • Add / edit form (CPU lists)</text>
 <text x="46" y="242" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">  • Asset page, fault log, QR label</text>
 <text x="46" y="262" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">  • Edit fault, step or history</text>
 <text x="46" y="282" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">  • Fault History (all events)</text>
@@ -33,8 +33,8 @@
 <rect x="656" y="148" width="238" height="72" rx="6" fill="#f4f6f9" stroke="#c9d1db" stroke-width="1"/>
 <rect x="656" y="148" width="5" height="72" rx="2" fill="#1a7f4b"/>
 <text x="670" y="170" font-size="13.5" font-weight="bold" fill="#1d2733" text-anchor="start">Validation  (app.py)</text>
-<text x="670" y="188" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">validate_asset(): rejects bad</text>
-<text x="670" y="203" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">input; closing needs every field</text>
+<text x="670" y="188" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">validate_asset(): rejects bad input,</text>
+<text x="670" y="203" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">wrong CPU family; closing needs all</text>
 <rect x="404" y="232" width="238" height="72" rx="6" fill="#f4f6f9" stroke="#c9d1db" stroke-width="1"/>
 <rect x="404" y="232" width="5" height="72" rx="2" fill="#1a7f4b"/>
 <text x="418" y="254" font-size="13.5" font-weight="bold" fill="#1d2733" text-anchor="start">Filters  (queries.py)</text>
@@ -84,7 +84,7 @@
 <rect x="656" y="568" width="5" height="72" rx="2" fill="#1a7f4b"/>
 <text x="670" y="590" font-size="13.5" font-weight="bold" fill="#1d2733" text-anchor="start">Reports + backup  (app.py)</text>
 <text x="670" y="608" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">/report/assets, /report/maintenance;</text>
-<text x="670" y="623" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">POST /api/backup saves a copy</text>
+<text x="670" y="623" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">/api/backup, /api/reset-data</text>
 <rect x="404" y="652" width="238" height="72" rx="6" fill="#f4f6f9" stroke="#c9d1db" stroke-width="1"/>
 <rect x="404" y="652" width="5" height="72" rx="2" fill="#1a7f4b"/>
 <text x="418" y="674" font-size="13.5" font-weight="bold" fill="#1d2733" text-anchor="start">QR labels  (qr_labels.py)</text>
@@ -96,7 +96,7 @@
 <text x="670" y="692" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">keeps all data, backup first;</text>
 <text x="670" y="707" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">safe to run twice</text>
 <text x="404" y="742" font-size="11" font-weight="normal" fill="#64707d" text-anchor="start">db.py: get_db() opens the database with foreign keys ON; init_db() runs schema.sql</text>
-<text x="404" y="760" font-size="11" font-weight="normal" fill="#64707d" text-anchor="start">Tests: backend/test_app.py (293 checks, temporary database), started by run-tests.*</text>
+<text x="404" y="760" font-size="11" font-weight="normal" fill="#64707d" text-anchor="start">Tests: backend/test_app.py (313 checks, temporary database), started by run-tests.*</text>
 <line x1="300" y1="230" x2="390" y2="230" stroke="#14213d" stroke-width="2.2" marker-end="url(#a)"/>
 <text x="345" y="220" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="middle">request</text>
 <line x1="390" y1="330" x2="300" y2="330" stroke="#14213d" stroke-width="2.2" marker-end="url(#a)"/>
@@ -143,7 +143,7 @@
 <text x="1014" y="724" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">built from the assets columns when they are asked for.</text>
 <text x="1014" y="750" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">database/ also holds schema.sql, db.py, queries.py,</text>
 <text x="1014" y="766" font-size="11.5" font-weight="normal" fill="#64707d" text-anchor="start">seed.py, migrate.py and backups/ (created when needed).</text>
-<rect x="30" y="830" width="640" height="520" rx="8" fill="#fff" stroke="#1a7f4b" stroke-width="2"/>
+<rect x="30" y="830" width="640" height="554" rx="8" fill="#fff" stroke="#1a7f4b" stroke-width="2"/>
 <path d="M30,838 a8,8 0 0 1 8,-8 h624 a8,8 0 0 1 8,8 v28 h-640 z" fill="#1a7f4b"/>
 <text x="44" y="855" font-size="16" font-weight="bold" fill="#fff" text-anchor="start">What happens when you press Save</text>
 <circle cx="56" cy="891" r="13" fill="#1a7f4b"/>
@@ -177,45 +177,48 @@
 <circle cx="56" cy="1329" r="11" fill="#1a7f4b"/>
 <text x="56" y="1333.5" font-size="12" font-weight="bold" fill="#fff" text-anchor="middle">3</text>
 <text x="80" y="1334" font-size="13" font-weight="normal" fill="#1d2733" text-anchor="start">The live asset page opens (the code itself is only a snapshot)</text>
-<rect x="710" y="830" width="660" height="520" rx="8" fill="#fff" stroke="#14213d" stroke-width="2"/>
+<rect x="710" y="830" width="660" height="554" rx="8" fill="#fff" stroke="#14213d" stroke-width="2"/>
 <path d="M710,838 a8,8 0 0 1 8,-8 h644 a8,8 0 0 1 8,8 v28 h-660 z" fill="#14213d"/>
 <text x="724" y="855" font-size="16" font-weight="bold" fill="#fff" text-anchor="start">Project files and what each one does</text>
 <rect x="724" y="870" width="632" height="28" rx="4" fill="#f4f6f9"/>
 <text x="738" y="888" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">backend/app.py</text>
 <text x="985" y="888" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">routes, validation, CSV, reports, backup (no SQL)</text>
 <rect x="724" y="904" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="922" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">backend/qr_labels.py</text>
-<text x="985" y="922" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">label text, QR code (segno), scan text to asset ID</text>
+<text x="738" y="922" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">backend/cpu_catalog.py</text>
+<text x="985" y="922" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">CPU / family lists and the match rule (no db change)</text>
 <rect x="724" y="938" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="956" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">backend/test_app.py</text>
-<text x="985" y="956" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">293 checks on a temporary database</text>
+<text x="738" y="956" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">backend/qr_labels.py</text>
+<text x="985" y="956" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">label text, QR code (segno), scan text to asset ID</text>
 <rect x="724" y="972" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="990" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/queries.py, db.py</text>
-<text x="985" y="990" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">every SQL statement; opens SQLite, keys on</text>
+<text x="738" y="990" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">backend/test_app.py</text>
+<text x="985" y="990" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">313 checks on a temporary database</text>
 <rect x="724" y="1006" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1024" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/schema.sql</text>
-<text x="985" y="1024" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">CREATE TABLE for all four tables</text>
+<text x="738" y="1024" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/queries.py, db.py</text>
+<text x="985" y="1024" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">every SQL statement; opens SQLite, keys on</text>
 <rect x="724" y="1040" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1058" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/seed.py, migrate.py</text>
-<text x="985" y="1058" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">40 demo assets + 43 events; upgrade an old db</text>
+<text x="738" y="1058" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/schema.sql</text>
+<text x="985" y="1058" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">CREATE TABLE for all four tables</text>
 <rect x="724" y="1074" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1092" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/inventory.db</text>
-<text x="985" y="1092" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">the data file (backups/ holds timestamped copies)</text>
+<text x="738" y="1092" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/seed.py, migrate.py</text>
+<text x="985" y="1092" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">40 demo assets + 43 events; upgrade an old db</text>
 <rect x="724" y="1108" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1126" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">frontend/templates/</text>
-<text x="985" y="1126" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">HTML pages (Jinja) for each screen</text>
+<text x="738" y="1126" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">database/inventory.db</text>
+<text x="985" y="1126" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">the data file (backups/ holds timestamped copies)</text>
 <rect x="724" y="1142" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1160" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">frontend/static/</text>
-<text x="985" y="1160" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">style.css, scan.js, bundled jsQR (QR reader)</text>
+<text x="738" y="1160" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">frontend/templates/</text>
+<text x="985" y="1160" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">HTML pages (Jinja) for each screen</text>
 <rect x="724" y="1176" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1194" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">start.*, reset-demo-data.*</text>
-<text x="985" y="1194" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">two-click launchers: venv, Flask + segno</text>
+<text x="738" y="1194" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">frontend/static/</text>
+<text x="985" y="1194" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">style.css, scan.js, cpu-fields.js, combobox.js, jsQR</text>
 <rect x="724" y="1210" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1228" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">run-tests.*</text>
-<text x="985" y="1228" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">test launcher: checks packages, asks Y/N to install</text>
+<text x="738" y="1228" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">start.*, reset-data.*</text>
+<text x="985" y="1228" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">two-click launchers: package check + install menu</text>
 <rect x="724" y="1244" width="632" height="28" rx="4" fill="#f4f6f9"/>
-<text x="738" y="1262" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">requirements*.txt</text>
-<text x="985" y="1262" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">Flask, segno; optional numpy, zxing-cpp (tests)</text>
-<text x="724" y="1300" font-size="12" font-weight="normal" fill="#64707d" text-anchor="start">Also in the project folder: README.md, TEAM_SPLIT.md, docs/ (this diagram), changelogs/,</text>
-<text x="724" y="1318" font-size="12" font-weight="normal" fill="#64707d" text-anchor="start">scripts/ (launcher code). Outputs: dashboard, QR labels, printable reports, CSV for Excel.</text>
+<text x="738" y="1262" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">run-tests.*</text>
+<text x="985" y="1262" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">test launcher: same menu, shows what is missing</text>
+<rect x="724" y="1278" width="632" height="28" rx="4" fill="#f4f6f9"/>
+<text x="738" y="1296" font-size="13" font-weight="bold" fill="#2457c5" text-anchor="start">requirements*.txt</text>
+<text x="985" y="1296" font-size="12.5" font-weight="normal" fill="#1d2733" text-anchor="start">Flask, segno; optional numpy, zxing-cpp (tests)</text>
+<text x="724" y="1334" font-size="12" font-weight="normal" fill="#64707d" text-anchor="start">Also in the project folder: README.md, TEAM_SPLIT.md, docs/ (this diagram), changelogs/,</text>
+<text x="724" y="1352" font-size="12" font-weight="normal" fill="#64707d" text-anchor="start">scripts/ (launcher code). Outputs: dashboard, QR labels, printable reports, CSV for Excel.</text>
 </svg>

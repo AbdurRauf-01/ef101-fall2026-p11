@@ -4,6 +4,8 @@ Deadline: Monday 9 Nov 2026. The code is already built and tested (`python backe
 
 **Golden rule:** edit only your own files. That keeps GitHub free of merge conflicts. If you need a change in someone else's file, ask them.
 
+> **v23 update (14 Nov 2026):** Abdur Rauf added the CPU and CPU family lists to the Add / Edit form (type to filter, pick from the list) and the check that the CPU belongs to its family: `backend/cpu_catalog.py` (new), the check in `validate_asset()` and the `/api/cpu-family` route in `backend/app.py`, 16 new checks in `backend/test_app.py`. Hassan Majid: `frontend/templates/asset_form.html` (the two lists) and `frontend/static/cpu-fields.js` (new). Irteza Raza: nothing changes in the database; the two values are still plain text columns. Tests: 313 checks. The launchers (`start.*`, `run-tests.*`, `scripts/`) now show a four-choice menu when Python or a package is missing (1 install into `venv/`, 2 install system-wide yourself with the official links shown, 3 continue anyway, 4 exit) and start straight away when everything is installed; on Linux only the double-clicked file needs `chmod +x`. `reset-data.*` (renamed from `reset-demo-data.*`) now offers 1 reset to demo data or 2 delete all data, and the sidebar's *Reset data* button opens the same two choices; the CPU and family lists are drawn by `frontend/static/combobox.js` in the app's own drop-down style.
+>
 > **v22 update (14 Nov 2026):** Abdur Rauf sorted the code into three folders: `backend/` (`app.py`, `qr_labels.py`, `test_app.py`), `database/` (`schema.sql`, `db.py`, `queries.py`, `seed.py`, `migrate.py`, `inventory.db`, `backups/`) and `frontend/` (`templates/`, `static/`); added the `run-tests.*` launchers (they check the test packages and ask Y/N before installing) and `requirements-test.txt`; corrected the test count (293 with a QR decoder installed, 292 without); and redrew the project diagram (`docs/`) with the folders and the QR feature. No database table, route or page changed. `database/migrate.py` stays Abdur's even though it sits in `database/`. Commands are now `python backend/app.py`, `python database/seed.py`, `python database/migrate.py`, `python backend/test_app.py`. Hassan Majid: the diagram in `docs/` is yours to explain.
 >
 > **v21 update (12 Nov 2026):** Abdur Rauf added printable asset and maintenance reports (`/report/assets`, `/report/maintenance`), fixed the in-app reset to save a backup before wiping, added the *Backup data* button (saves to `database/backups/` without resetting), and updated the script reset to also put backups in `database/backups/`. Hassan Majid: the two new report templates (`report_assets.html`, `report_maintenance.html`) are yours to explain — they extend no base.html, use their own CSS, and are designed to be printed.
@@ -50,17 +52,17 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 
 ## Abdur Rauf (EE-26138): Backend
 
-**Files:** `backend/app.py`, `backend/test_app.py`, `database/migrate.py`, the launcher scripts (`start.*`, `reset-demo-data.*`, `scripts/`) and `README.md`
+**Files:** `backend/app.py`, `backend/test_app.py`, `database/migrate.py`, the launcher scripts (`start.*`, `reset-data.*`, `scripts/`) and `README.md`
 
 **What the code does**
 
 - `backend/app.py` contains **no SQL**; it calls `database/queries.py`.
 - `validate_asset()` checks every field on the server: required values, positive numbers, valid IP, valid dates, purchase date not in the future, warranty not before purchase, duplicate ID rejected.
 - `warranty_status()` computes Active / Expiring soon / Expired from `warranty_expiry`. `parse_date()` and `today()` are helpers.
-- Routes: `/` and `/dashboard`, `/assets`, `/assets/new`, `/api/next-asset-id`, `/api/suggested-ip`, `/api/reset-demo`, `/api/backup`, `/assets/<id>`, `/assets/<id>/edit`, `/assets/<id>/retire`, `/assets/<id>/reactivate`, `/assets/<id>/maintenance`, `/assets/<id>/fault/edit`, `/steps/<id>/edit|delete`, `/maintenance`, `/maintenance/<id>/edit|delete`, `/export/assets.csv`, `/export/maintenance.csv`, `/report/assets`, `/report/maintenance` and the `/about/...` pages.
+- Routes: `/` and `/dashboard`, `/assets`, `/assets/new`, `/api/next-asset-id`, `/api/suggested-ip`, `/api/reset-data` (and the older `/api/reset-demo`), `/api/backup`, `/assets/<id>`, `/assets/<id>/edit`, `/assets/<id>/retire`, `/assets/<id>/reactivate`, `/assets/<id>/maintenance`, `/assets/<id>/fault/edit`, `/steps/<id>/edit|delete`, `/maintenance`, `/maintenance/<id>/edit|delete`, `/export/assets.csv`, `/export/maintenance.csv`, `/report/assets`, `/report/maintenance` and the `/about/...` pages.
 - `csv_response()` builds the CSV download (formula cells are escaped). `guard_requests()` refuses wrong Host headers and cross-site form posts, and `security_headers()` adds the protection headers. Error handlers show friendly pages for 400, 404, 405, 413, 500 and database errors.
 - `asset_edit()` loads the asset, and before showing the edit form turns the database row into a dictionary with blank text for empty values (the fix for the version 1 error described in report section 5).
-- `backend/test_app.py` runs every check (293 in version 22; 292 without the optional numpy and QR-decoder packages; the `run-tests.*` scripts check for them and ask before installing) on a temporary database (your real data is never touched) and prints a results table.
+- `backend/test_app.py` runs every check (313 in version 23; 312 without the optional numpy and QR-decoder packages; the `run-tests.*` scripts check for them and ask before installing) on a temporary database (your real data is never touched) and prints a results table.
 
 **What you must do**
 
