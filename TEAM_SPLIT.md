@@ -13,8 +13,8 @@ Deadline: Monday 9 Nov 2026. The code is already built and tested (`python backe
 |  | Irteza Raza<br>(EE-26129): Database | Abdur Rauf<br>(EE-26138): Backend | Hassan Majid<br>(EE-26125): Frontend |
 | --- | --- | --- | --- |
 | Files | `database/schema.sql`, `database/db.py`, `database/queries.py`, `database/seed.py`, `database/inventory.db` | `backend/app.py`, `backend/qr_labels.py`, `backend/test_app.py`, `database/migrate.py`, Scripts, `README` | No code. Reads and explains `frontend/templates/` (18 files), `frontend/static/style.css`, `docs/` diagram |
-| Report sections | 4 Data design, 7 Results, 8 Limitations | 1 Problem, 5 Main code segments, 6 Testing, 7 Results, 8 Limitations | 1 Problem, 2 Architecture, 3 Technology, 7 Results, 8 Limitations |
-| Extra | Demo dataset deliverable, data/storage description | README run steps, test evidence | Final report PDF + Classroom upload, demo video (optional), figures |
+| Report sections | 1 Problem, 4 Data design, 7 Results, 8 Limitations | 1 Problem, 5 Main code segments, 6 Testing, 7 Results, 8 Limitations | 1 Problem, 2 Architecture, 3 Technology, 7 Results, 8 Limitations |
+| Extra | Demo dataset deliverable, data/storage description | README run steps, test evidence, Classroom upload | Final report PDF, figures, demo video (optional) |
 
 Put your real name and ID in the contribution table (section 9 of the report) and in the README disclosure. Be honest about what you wrote, changed and checked yourself.
 
@@ -72,6 +72,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 4. Capture manual test evidence with screenshots: blank field rejected, duplicate asset ID, invalid IP, a filter result, the CSV opened in LibreOffice Calc or Excel.
 5. Change `WARRANTY_SOON_DAYS` (top of `database/queries.py`, coordinate with Irteza) from 30 to 90, watch the "Expiring soon" badges on the asset list change, then change it back. Be ready to do this live.
 6. Write report sections 5 and 6 (shorten the test table to the 8 to 10 most important rows; the full run stays in the repository).
+7. Upload to Google Classroom
 
 **Viva questions you must answer**
 
@@ -106,7 +107,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 1. Click through every page of version 19 and check each one against your interface ideas (theme, sidebar, sidebar sections, assets list sorting).
 2. Map each page to its template and the data `backend/app.py` passes in (for example `/assets` passes `assets`, `opts`, `f`).
 3. **Your own task (no code):** on paper, propose one more interface change (for example a different colour for Under Repair, or an extra sidebar section). Write which template and which CSS variable it would touch, and how you would test it. Explain it in the viva.
-4. Own the final report: assemble the sections from Irteza and Abdur, insert the schema image from `docs/project-schema.png` as Figure 1, export to PDF, check the page count (short report), and upload to Google Classroom.
+4. Own the final report: assemble the sections from Irteza and Abdur Rauf, insert the schema image from `docs/project-schema.png` as Figure 1, export to PDF, and check the page count (short report).
 5. Optional: record a 2 to 3 minute demo video (add an asset, log a fault, filter, dashboard, export).
 6. Write report sections 1, 2, 3, 7 and 8.
 
