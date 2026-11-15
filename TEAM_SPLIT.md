@@ -6,7 +6,7 @@ Original deadline: Monday 9 Nov 2026 (this file was updated for version 23 on 14
 
 > **v23 update (14 Nov 2026):** Abdur Rauf added the CPU and CPU family lists to the Add / Edit form (type to filter, pick from the list) and the check that the CPU belongs to its family: `backend/cpu_catalog.py` (new), the check in `validate_asset()` and the `/api/cpu-family` route in `backend/app.py`, 16 new checks in `backend/test_app.py`. Hassan Majid: `frontend/templates/asset_form.html` (the two lists), `frontend/static/cpu-fields.js` and `frontend/static/combobox.js` (both new) are yours to explain. Irteza Raza: nothing changes in the database; the two values are still plain text columns. Tests: 313 checks. The launchers (`start.*`, `run-tests.*`, `scripts/`) now show a four-choice menu when Python or a package is missing (1 install into `venv/`, 2 install system-wide yourself with the official links shown, 3 continue anyway, 4 exit) and start straight away when everything is installed; on Linux only the double-clicked file needs `chmod +x`. `reset-data.*` (renamed from `reset-demo-data.*`) now offers 1 reset to demo data or 2 delete all data, and the sidebar's *Reset data* button opens the same two choices; the CPU and family lists are drawn by `frontend/static/combobox.js` in the app's own drop-down style.
 >
-> **v22 update (14 Nov 2026):** Abdur Rauf sorted the code into three folders: `backend/` (`app.py`, `qr_labels.py`, `test_app.py`), `database/` (`schema.sql`, `db.py`, `queries.py`, `seed.py`, `migrate.py`, `inventory.db`, `backups/`) and `frontend/` (`templates/`, `static/`); added the `run-tests.*` launchers (they check the test packages and ask Y/N before installing) and `requirements-test.txt`; corrected the test count (293 with a QR decoder installed, 292 without); and redrew the project diagram (`docs/`) with the folders and the QR feature. No database table, route or page changed. `database/migrate.py` stays Abdur's even though it sits in `database/`. Commands are now `python backend/app.py`, `python database/seed.py`, `python database/migrate.py`, `python backend/test_app.py`. Hassan Majid: the diagram in `docs/` is yours to explain.
+> **v22 update (14 Nov 2026):** Abdur Rauf sorted the code into three folders: `backend/` (`app.py`, `qr_labels.py`, `test_app.py`), `database/` (`schema.sql`, `db.py`, `queries.py`, `seed.py`, `migrate.py`, `inventory.db`, `backups/`) and `frontend/` (`templates/`, `static/`); added the `run-tests.*` launchers (they check the test packages and ask Y/N before installing) and `requirements-test.txt`; corrected the test count (293 with a QR decoder installed, 292 without); and redrew the project diagram (`docs/`) with the folders and the QR feature. No database table, route or page changed. `database/migrate.py` stays Abdur Rauf's even though it sits in `database/`. Commands are now `python backend/app.py`, `python database/seed.py`, `python database/migrate.py`, `python backend/test_app.py`. Hassan Majid: the diagram in `docs/` is yours to explain.
 >
 > **v21 update (12 Nov 2026):** Abdur Rauf added printable asset and maintenance reports (`/report/assets`, `/report/maintenance`), fixed the in-app reset to save a backup before wiping, added the *Backup data* button (saves to `database/backups/` without resetting), and updated the script reset to also put backups in `database/backups/`. Hassan Majid: the two new report templates (`report_assets.html`, `report_maintenance.html`) are yours to explain — they extend no base.html, use their own CSS, and are designed to be printed.
 
@@ -14,7 +14,7 @@ Original deadline: Monday 9 Nov 2026 (this file was updated for version 23 on 14
 | --- | --- | --- | --- |
 | Files | `database/schema.sql`, `database/db.py`, `database/queries.py`, `database/seed.py`, `database/inventory.db` | `backend/app.py`, `backend/qr_labels.py`, `backend/cpu_catalog.py`, `backend/test_app.py`, `database/migrate.py`, launcher scripts (`start.*`, `reset-data.*`, `run-tests.*`, `scripts/`), `README` | No code. Reads and explains `frontend/templates/` (18 files), `frontend/static/style.css`, `docs/` diagram |
 | Report sections | 1 Problem, 4 Data design, 7 Results, 8 Limitations | 1 Problem, 5 Main code segments, 6 Testing, 7 Results, 8 Limitations | 1 Problem, 2 Architecture, 3 Technology, 7 Results, 8 Limitations |
-| Extra | Demo dataset deliverable, data/storage description | README run steps, test evidence, Classroom upload | Final report PDF, figures, demo video (optional) |
+| Extra | Demo dataset deliverable, data/storage description | README run steps, test evidence, Classroom upload, optional video recording (Fedora KDE Linux) | Final report PDF, figures, demo video (optional) |
 
 Put your real name and ID in the contribution table (section 9 of the report) and in the README disclosure. Be honest about what you wrote, changed and checked yourself.
 
@@ -35,7 +35,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 
 1. Run `python database/seed.py`, then open `database/inventory.db` in DB Browser for SQLite. Write down both tables, their keys and the relationship.
 2. In DB Browser, **Execute SQL** tab, write these 5 queries yourself and check they match the dashboard: total active assets (38), out of warranty (25 on 7, 8 and 9 Nov 2026), needs attention (6); the warranty number changes with the date because warranty is computed from today's date, most failing asset (`L1-PC-009`, 6 events), top fault category (Disk failure, 14). Screenshot each result: this is your testing evidence for "dashboard numbers match the data".
-3. **Your own change:** the warranty-after-purchase `CHECK` already exists, so add a different one: `CHECK (storage_gb <= 100000)` on the `assets` table in `database/schema.sql`. Re-run `python database/seed.py` and `python backend/test_app.py`. If tests fail, undo the change and tell the team. (Abdur's rule below is about RAM, so the two do not overlap.)
+3. **Your own change:** the warranty-after-purchase `CHECK` already exists, so add a different one: `CHECK (storage_gb <= 100000)` on the `assets` table in `database/schema.sql`. Re-run `python database/seed.py` and `python backend/test_app.py`. If tests fail, undo the change and tell the team. (Abdur Rauf's rule below is about RAM, so the two do not overlap.)
 4. Practise the viva demo: close the app, make a copy of `database/inventory.db`, delete the original and start the app. It creates a new empty database with six places and no assets, so the dashboard shows zeros. Then run `python database/seed.py` (or put the copy back) to recover. Explain why a backup of this one file matters.
 5. Export `assets.csv` and `maintenance.csv` from the app and keep them as the "demo dataset" deliverable.
 6. Write report sections 4 and 7 (the skeleton already has the tables and figures; check every number against your own queries).
@@ -74,6 +74,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 5. Change `WARRANTY_SOON_DAYS` (top of `database/queries.py`, coordinate with Irteza) from 30 to 90, watch the "Expiring soon" badges on the asset list change, then change it back. Be ready to do this live.
 6. Write report sections 5 and 6 (shorten the test table to the 8 to 10 most important rows; the full run stays in the repository).
 7. Upload to Google Classroom
+8. Optional: record a demo video on Fedora KDE Linux (add an asset, log a fault, filter, dashboard, export).
 
 **Viva questions you must answer**
 
@@ -88,7 +89,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 
 ## Hassan Majid (EE-26125): Frontend
 
-**Viva:** all frontend questions (templates, CSS, pages, charts, filters, forms) are Hassan's. He proposed the interface ideas (theme, sidebar, sidebar sections, assets list sorting). Irteza and Abdur built them in version 19 with AI help, and the team checked them. Hassan writes no code.
+**Viva:** all frontend questions (templates, CSS, pages, charts, filters, forms) are Hassan's. He proposed the interface ideas (theme, sidebar, sidebar sections, assets list sorting). Irteza and Abdur Rauf built them in version 19 with AI help, and the team checked them. Hassan writes no code.
 
 **Files:** all 18 files in `frontend/templates/` (`base`, `assets`, `asset_form`, `asset_detail`, `asset_fault_edit`, `step_edit`, `maintenance`, `maintenance_edit`, `dashboard`, `message`, `about_credits`, `about_privacy`, `about_contact`, `about_schema`, `labels`, `scan`, `report_assets`, `report_maintenance`), `frontend/static/style.css`, `frontend/static/scan.js`, and the diagram in `docs/`
 
@@ -114,7 +115,7 @@ Put your real name and ID in the contribution table (section 9 of the report) an
 
 **Viva questions you must answer**
 
-- Which interface ideas did you propose, and how did they end up in version 19? (Irteza and Abdur built them; explain each one.)
+- Which interface ideas did you propose, and how did they end up in version 19? (Irteza and Abdur Rauf built them; explain each one.)
 - How does the browser get the dashboard charts? (CSS bar widths calculated from the data, no Internet or library.)
 - What is a template, and why does `base.html` exist?
 - Why does the form use POST for saving but GET for filtering?
