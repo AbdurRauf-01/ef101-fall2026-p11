@@ -358,7 +358,7 @@ pip install -r requirements.txt
 **D. Start the app (every time).**
 
 ```
-cd ~/Downloads/ef101-fall2026-p11-main         # the project folder
+cd ~/Downloads/ef101-fall2026-p11-main         # when relaunching the project in downloads folder
 source venv/bin/activate      # the prompt now starts with (venv)
 python backend/app.py
 ```
